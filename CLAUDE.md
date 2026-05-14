@@ -45,6 +45,16 @@ Examples: `feat/5-add-book-endpoint`, `fix/12-null-author-crash`, `chore/1-creat
 - PR title follows the same Conventional Commits format as the branch
 - Merge strategy: **squash merge** — keeps `main` history linear; GitHub uses the PR title as the resulting commit message
 
+### Dependencies
+
+Pinning policy:
+
+- All direct dependencies in `pyproject.toml` use exact version pins (`package==X.Y.Z`), both runtime and dev
+- `uv.lock` is committed; it pins transitive dependencies and SHA256 hashes
+- Upgrades are deliberate: `uv add "package==X.Y.Z"` or edit `pyproject.toml` and run `uv sync`
+- Every PR that modifies `pyproject.toml` or `uv.lock` must have its dependency diff reviewed explicitly before merge
+- In automated environments (CI, prod, once they exist), use `uv sync --frozen` so resolution is forbidden
+
 ## Language
 
 All public-facing content must be written in **English**: issues, PR titles and descriptions, commit messages, code, comments, and documentation.
