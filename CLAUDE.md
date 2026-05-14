@@ -43,6 +43,11 @@ Examples: `feat/5-add-book-endpoint`, `fix/12-null-author-crash`, `chore/1-creat
 
 - Every PR must reference its issue: `Closes #N`
 - PR title follows the same Conventional Commits format as the branch
+- Merge strategy: **squash merge** — keeps `main` history linear; GitHub uses the PR title as the resulting commit message
+
+## Language
+
+All public-facing content must be written in **English**: issues, PR titles and descriptions, commit messages, code, comments, and documentation.
 
 ## AI Collaboration Rules
 
