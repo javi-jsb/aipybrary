@@ -65,3 +65,8 @@
 - [x] 10.3 Run the test suite: `uv run pytest` (all green)
 - [x] 10.4 Run linting: `uv run ruff format --check && uv run ruff check` (no findings)
 - [x] 10.5 Start Postgres: `docker compose up -d`; confirm container is `running`; `docker compose down`
+
+## 11. AI development tooling
+
+- [x] 11.1 Add the official FastAPI Claude Code skill under `.claude/skills/fastapi/` (drop-in: presence in the directory is enough, no install step required)
+- [x] 11.2 Verify the skill is picked up by Claude Code (visible in `/skills`) on a fresh session

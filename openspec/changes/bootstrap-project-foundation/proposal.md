@@ -17,6 +17,7 @@ The project has tooling conventions defined in CLAUDE.md but no actual code, dep
 - Declare `sqlmodel` as a dependency in advance, even though it is not used in code in this change
 - Adopt an exact-pin dependency policy: direct dependencies in `pyproject.toml` use `==X.Y.Z`, `uv.lock` is committed, upgrades are deliberate
 - Update `CLAUDE.md` with a new "Dependencies" convention section documenting the pinning policy
+- Version the official FastAPI Claude Code skill at `.claude/skills/fastapi/` so AI-assisted FastAPI work shares the same guidance across contributors
 
 ## Capabilities
 
@@ -30,7 +31,7 @@ _None — this is the first change; no prior specs exist._
 
 ## Impact
 
-- **New files**: `pyproject.toml`, `.python-version`, `.env.example`, `.pre-commit-config.yaml`, `docker-compose.yml`, `README.md`, `src/app/__init__.py`, `src/app/main.py`, `tests/__init__.py`, `tests/test_health.py`, `uv.lock`
+- **New files**: `pyproject.toml`, `.python-version`, `.env.example`, `.pre-commit-config.yaml`, `docker-compose.yml`, `README.md`, `src/app/__init__.py`, `src/app/main.py`, `tests/__init__.py`, `tests/test_health.py`, `uv.lock`, `.claude/skills/fastapi/**`
 - **Modified files**: `CLAUDE.md` (new "Dependencies" subsection)
 - **Dependencies introduced**: `fastapi[standard]`, `sqlmodel`, `pydantic-settings`; dev: `pytest`, `pytest-asyncio`, `httpx`, `ruff`, `pre-commit`
 - **Local dev workflow**: developers must run `uv sync` and `pre-commit install --hook-type pre-commit --hook-type pre-push` after cloning; running Postgres requires `docker compose up -d`
