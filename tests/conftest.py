@@ -1,26 +1,31 @@
 from collections.abc import AsyncGenerator
 
 import pytest
+from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from alembic import command
 from app.config import settings
 from app.database import get_session
 from app.main import app
 
-test_engine = create_async_engine(settings.database_url, echo=False)
+test_engine = create_async_engine(settings.test_database_url, echo=False)
 test_async_session = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
+def _alembic_config() -> Config:
+    cfg = Config("alembic.ini")
+    cfg.set_main_option("sqlalchemy.url", settings.test_database_url)
+    return cfg
+
+
 @pytest.fixture(autouse=True)
-async def db_setup() -> AsyncGenerator[None]:
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
+def db_setup() -> None:
+    command.upgrade(_alembic_config(), "head")
+    yield  # type: ignore[misc]
+    command.downgrade(_alembic_config(), "base")
 
 
 @pytest.fixture
