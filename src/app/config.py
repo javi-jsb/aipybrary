@@ -9,11 +9,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    POSTGRES_USER: str = "aipybrary"
-    POSTGRES_PASSWORD: str = "changeme"
-    POSTGRES_HOST: str = "localhost"
-    POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "aipybrary"
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
 
     @computed_field  # type: ignore[prop-decorator]
     @property
