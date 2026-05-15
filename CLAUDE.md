@@ -39,9 +39,13 @@ Book library REST API built with Python, FastAPI, and SQLModel.
 
 Examples: `feat/5-add-book-endpoint`, `fix/12-null-author-crash`, `chore/1-create-claude-md`
 
+### Commit granularity
+
+Commits within a PR must be grouped by logical section, not bundled into a single monolithic commit. Each commit should represent a cohesive unit of work (e.g., dependencies, domain layer, infrastructure, tests). This makes the PR easier to review commit-by-commit.
+
 ### Pull Requests
 
-- Every PR must reference its issue: `Closes #N`
+- Every PR must reference its issue with `Closes #N` **in the PR body**, not in individual commits — the close trigger fires on squash merge via the PR description
 - PR title follows the same Conventional Commits format as the branch
 - Merge strategy: **squash merge** — keeps `main` history linear; GitHub uses the PR title as the resulting commit message
 
