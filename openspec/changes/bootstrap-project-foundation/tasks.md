@@ -70,3 +70,9 @@
 
 - [x] 11.1 Add the official FastAPI Claude Code skill under `.claude/skills/fastapi/` (drop-in: presence in the directory is enough, no install step required)
 - [x] 11.2 Verify the skill is picked up by Claude Code (visible in `/skills`) on a fresh session
+
+## 12. FastAPI CLI entrypoint
+
+- [x] 12.1 Add `[tool.fastapi]` section to `pyproject.toml` with `entrypoint = "app.main:app"` so the FastAPI CLI finds the app automatically
+- [x] 12.2 Simplify the README "Run" command from `uv run fastapi dev src/app/main.py` to `uv run fastapi dev`
+- [x] 12.3 Verify `uv run fastapi dev` boots the app and `GET /health` returns `{"status": "ok"}`

@@ -18,6 +18,7 @@ The project has tooling conventions defined in CLAUDE.md but no actual code, dep
 - Adopt an exact-pin dependency policy: direct dependencies in `pyproject.toml` use `==X.Y.Z`, `uv.lock` is committed, upgrades are deliberate
 - Update `CLAUDE.md` with a new "Dependencies" convention section documenting the pinning policy
 - Version the official FastAPI Claude Code skill at `.claude/skills/fastapi/` so AI-assisted FastAPI work shares the same guidance across contributors
+- Configure the FastAPI CLI entrypoint in `pyproject.toml` (`[tool.fastapi] entrypoint = "app.main:app"`) so `fastapi dev` works without an explicit path
 
 ## Capabilities
 

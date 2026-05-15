@@ -21,6 +21,9 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "app"
 
+[tool.fastapi]
+entrypoint = "app.main:app"
+
 [dependency-groups]
 dev = [
     "httpx==0.28.1",

@@ -28,7 +28,7 @@ cp .env.example .env
 
 ```bash
 # Start the FastAPI dev server (hot reload)
-uv run fastapi dev src/app/main.py
+uv run fastapi dev
 
 # Health check
 curl http://localhost:8000/health
