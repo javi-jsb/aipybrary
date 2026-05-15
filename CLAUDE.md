@@ -55,6 +55,16 @@ Pinning policy:
 - Every PR that modifies `pyproject.toml` or `uv.lock` must have its dependency diff reviewed explicitly before merge
 - In automated environments (CI, prod, once they exist), use `uv sync --frozen` so resolution is forbidden
 
+### OpenSpec workflow
+
+OpenSpec changes live under `openspec/changes/<change-name>/` while active. Once a change is complete (all tasks done, all artifacts marked done), it must be **archived through its own dedicated issue + PR** — never folded into the implementation PR, never a direct commit to `main`.
+
+Archive issue/branch/PR convention:
+
+- Issue title: `chore(openspec): archive '<change-name>' change`
+- Branch: `chore/<N>-archive-<change-name>`
+- The PR syncs each delta spec into `openspec/specs/<capability>/spec.md` and moves the change directory to `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
+
 ## Language
 
 All public-facing content must be written in **English**: issues, PR titles and descriptions, commit messages, code, comments, and documentation.
