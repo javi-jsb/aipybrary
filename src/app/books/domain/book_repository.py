@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from app.books.domain.book_model import Book, BookCreate, BookUpdate
+from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy, SortOrder
 
 
 class BookRepository(ABC):
@@ -12,7 +12,15 @@ class BookRepository(ABC):
     async def get_by_id(self, book_id: uuid.UUID) -> Book | None: ...
 
     @abstractmethod
-    async def get_all(self) -> list[Book]: ...
+    async def get_filtered(
+        self,
+        title: str | None,
+        author: str | None,
+        sort_by: SortBy,
+        order: SortOrder,
+        page: int,
+        size: int,
+    ) -> tuple[list[Book], int]: ...
 
     @abstractmethod
     async def update(self, book: Book, data: BookUpdate) -> Book: ...
