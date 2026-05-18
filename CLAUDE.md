@@ -12,7 +12,7 @@ Book library REST API built with Python, FastAPI, and SQLModel.
 | Database | PostgreSQL (Docker for local dev) |
 | Package manager | uv |
 | Linting & formatting | Ruff |
-| Testing | pytest + pytest-asyncio |
+| Testing | pytest + pytest-asyncio + pytest-cov |
 
 ## Development Conventions
 
@@ -58,6 +58,12 @@ Pinning policy:
 - Upgrades are deliberate: `uv add "package==X.Y.Z"` or edit `pyproject.toml` and run `uv sync`
 - Every PR that modifies `pyproject.toml` or `uv.lock` must have its dependency diff reviewed explicitly before merge
 - In automated environments (CI, prod, once they exist), use `uv sync --frozen` so resolution is forbidden
+
+### Testing
+
+- `make test` — run the test suite
+- `make coverage` — run tests with coverage; produces a terminal report (missing lines) and an HTML report in `htmlcov/`
+- Coverage target: tests should aim for close to 100%. Use `# pragma: no cover` only for genuinely untestable lines — abstract method stubs and dependency-injection wiring that is replaced in tests.
 
 ### OpenSpec workflow
 
