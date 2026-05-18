@@ -27,8 +27,10 @@ cp .env.example .env
 ### Run
 
 ```bash
-# Start the FastAPI dev server (hot reload)
-uv run fastapi dev
+make db-up       # start Postgres
+make db-migrate  # apply database migrations
+make db-seed     # (optional) seed development data
+make dev         # start the FastAPI dev server (hot reload)
 
 # Health check
 curl http://localhost:8000/health
@@ -38,42 +40,19 @@ curl http://localhost:8000/health
 ### Tests and linting
 
 ```bash
-uv run pytest                          # run tests
-uv run ruff format                     # format code
-uv run ruff check                      # lint
+make test        # run tests
+make coverage    # run tests with coverage (terminal + HTML report in htmlcov/)
+make check       # lint and verify formatting (no changes)
+make format      # fix formatting
 ```
 
-### Database (Postgres)
+## Architecture
 
-```bash
-docker compose up -d                   # or: docker-compose up -d
-docker compose ps                      # check the container is healthy
-docker compose down                    # stop and remove
-```
+Each domain (e.g. `books`) follows a lightweight DDD layering:
 
-> **Note:** Postgres is provisioned but not yet wired to the application. The next change will add SQLModel integration and the first domain entity.
-
-## Project structure
-
-```
-aipybrary/
-├── src/
-│   └── app/                  # FastAPI application
-│       ├── __init__.py
-│       ├── config.py         # pydantic-settings (Settings class)
-│       └── main.py           # FastAPI app instance + /health endpoint
-├── tests/
-│   └── test_health.py
-├── openspec/                 # OpenSpec changes and specs (SDD)
-├── docker-compose.yml        # Postgres service
-├── pyproject.toml            # project metadata, dependencies, tool config
-├── uv.lock                   # exact pinned dependency tree (committed)
-├── .pre-commit-config.yaml   # Ruff + pytest git hooks
-├── .python-version           # pinned to 3.13
-├── .env.example              # template — copy to .env and adjust
-├── CLAUDE.md                 # project conventions for AI-assisted development
-└── README.md
-```
+- **domain** — entities, value objects, and the abstract repository interface
+- **application** — use-case services that orchestrate domain logic
+- **infrastructure** — FastAPI routers and SQLModel repository implementations
 
 ## Documentation
 

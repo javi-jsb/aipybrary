@@ -67,7 +67,9 @@ Pinning policy:
 
 - `make test` — run the test suite
 - `make coverage` — run tests with coverage; produces a terminal report (missing lines) and an HTML report in `htmlcov/`
+- `make check` — lint and format verification (read-only); `make format` applies fixes
 - Coverage target: tests should aim for close to 100%. Use `# pragma: no cover` only for genuinely untestable lines — abstract method stubs and dependency-injection wiring that is replaced in tests.
+- Run `make help` for the full list of targets — the Makefile is the source of truth
 
 ### OpenSpec workflow
 
