@@ -45,6 +45,7 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 source = ["app"]
 branch = true
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
 show_missing = true
