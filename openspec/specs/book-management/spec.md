@@ -17,10 +17,11 @@ The application SHALL define a `Book` entity as a SQLModel table class with the 
 | `author` | `str` | Required, max 300 chars |
 | `isbn` | `str \| None` | Optional, max 13 chars, unique when present |
 | `publication_year` | `int \| None` | Optional |
+| `synopsis` | `str \| None` | Optional, no length cap, stored as TEXT |
 | `created_at` | `datetime` | Server-default `now()`, not client-updatable |
 | `updated_at` | `datetime` | Server-default `now()`, auto-updated on modification |
 
-The model SHALL also define separate Pydantic schemas for API boundaries: `BookCreate`, `BookUpdate`, and `BookPublic`.
+The model SHALL also define separate Pydantic schemas for API boundaries: `BookCreate`, `BookUpdate`, and `BookPublic`. All three SHALL include the `synopsis` field.
 
 #### Scenario: Book is created with all required fields
 
@@ -66,21 +67,24 @@ The service MUST NOT depend on SQLModel, FastAPI, or any infrastructure detail â
 
 ### Requirement: List all books
 
-The API SHALL expose `GET /books` that returns all books in the database.
+The API SHALL expose `GET /books` that returns a paginated `BookListResponse` envelope (see `book-list-query` spec) instead of a flat array.
+
+The endpoint signature, filtering, sorting, and pagination behaviour are fully specified in the `book-list-query` capability spec.
 
 #### Scenario: Books exist
 
 - **WHEN** a client sends `GET /books`
 - **AND** the database contains books
 - **THEN** the response status code is `200`
-- **AND** the response body is a JSON array of `BookPublic` objects
+- **AND** the response body is a `BookListResponse` with `items` containing `BookPublic` objects
 
 #### Scenario: No books exist
 
 - **WHEN** a client sends `GET /books`
 - **AND** the database is empty
 - **THEN** the response status code is `200`
-- **AND** the response body is an empty JSON array `[]`
+- **AND** `items` is `[]`
+- **AND** `total` is `0`
 
 ### Requirement: Get a book by ID
 
@@ -142,6 +146,67 @@ The API SHALL expose `DELETE /books/{book_id}` that removes a book.
 
 - **WHEN** a client sends `DELETE /books/{book_id}` with a non-existent ID
 - **THEN** the response status code is `404`
+
+### Requirement: Book synopsis field
+
+The `Book` entity SHALL have an optional `synopsis` field stored as TEXT with no length cap.
+
+A dedicated Alembic migration SHALL add the `synopsis` column (nullable, no server default) to the `books` table.
+
+#### Scenario: Book created with synopsis
+
+- **WHEN** a client sends `POST /books` with a `synopsis` value
+- **THEN** the response status is `201`
+- **AND** the returned `BookPublic` contains the provided synopsis
+
+#### Scenario: Book created without synopsis
+
+- **WHEN** a client sends `POST /books` without a `synopsis` field
+- **THEN** the response status is `201`
+- **AND** `synopsis` in the response is `null`
+
+#### Scenario: Synopsis migration is reversible
+
+- **WHEN** a developer runs `alembic downgrade -1` after applying the synopsis migration
+- **THEN** the `synopsis` column is dropped from the `books` table
+
+### Requirement: ISBN checksum validation
+
+When a non-null `isbn` value is provided in `BookCreate` or `BookUpdate`, the application SHALL validate it as a well-formed ISBN-10 or ISBN-13.
+
+Validation rules:
+- Hyphens are stripped before validation and before storage
+- After stripping, the value must be exactly 10 or 13 digits (ISBN-10 may end with `X`)
+- ISBN-10 checksum: sum of `digit[i] * (10 - i)` for `i` in `0..8`, check digit satisfies `(sum + check) % 11 == 0` where `X` = 10
+- ISBN-13 checksum: alternating weights 1 and 3, total sum must be divisible by 10
+
+#### Scenario: Valid ISBN-13 accepted
+
+- **WHEN** a client sends `POST /books` with `isbn` `"978-0-06-093434-7"`
+- **THEN** the response status is `201`
+- **AND** the stored isbn is `"9780060934347"` (hyphens stripped)
+
+#### Scenario: Valid ISBN-10 accepted
+
+- **WHEN** a client sends `POST /books` with `isbn` `"0-306-40615-2"`
+- **THEN** the response status is `201`
+- **AND** the stored isbn is `"0306406152"`
+
+#### Scenario: Invalid checksum rejected
+
+- **WHEN** a client sends `POST /books` with `isbn` `"9780000000000"` (invalid checksum)
+- **THEN** the response status is `422`
+
+#### Scenario: Wrong length rejected
+
+- **WHEN** a client sends `POST /books` with `isbn` `"12345"`
+- **THEN** the response status is `422`
+
+#### Scenario: Null ISBN bypasses validation
+
+- **WHEN** a client sends `POST /books` without an `isbn` field
+- **THEN** the response status is `201`
+- **AND** validation is not triggered
 
 ### Requirement: Books table migration
 
