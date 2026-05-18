@@ -48,6 +48,10 @@ Commits within a PR must be grouped by logical section, not bundled into a singl
 - Every PR must reference its issue with `Closes #N` **in the PR body**, not in individual commits — the close trigger fires on squash merge via the PR description
 - PR title follows the same Conventional Commits format as the branch
 - Merge strategy: **squash merge** — keeps `main` history linear; GitHub uses the PR title as the resulting commit message
+- After merging, always pull `main` locally and delete the merged branch:
+  ```bash
+  git checkout main && git pull origin main && git branch -d <branch>
+  ```
 
 ### Dependencies
 
