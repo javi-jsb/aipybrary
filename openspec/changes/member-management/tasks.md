@@ -44,3 +44,10 @@
 - [x] 6.1 `make check` passes (lint + format) and `make coverage` is at/near 100% for the new slice
 - [x] 6.2 Update `CLAUDE.md` if any new convention/decision emerged during implementation — reviewed: no project-wide convention emerged. The 409-via-`DuplicateEmailError` placement and the deferred-modularization decision are change-scoped and captured in `design.md` + issue #25; nothing to add to `CLAUDE.md`.
 - [x] 6.3 Open the PR with `Closes #21` in the body (not in commits), Conventional Commits title, commits grouped by the sections above — PR #26
+
+## 8. PR #26 review follow-ups
+
+- [x] 8.1 Email validation/normalization on `MemberCreate`/`MemberUpdate` (trim + lowercase + `local@domain.tld` shape), mirroring the `books` `isbn` validator; dedicated `tests/members/test_email_validator.py`
+- [x] 8.2 `status` query param added to `GET /members` filter (exact match) and `sort_by` (`SortBy.status`), threaded through repo ABC / SQL repo / service / router; API + service tests
+- [x] 8.3 Name the email unique constraint `uq_members_email`; SQL repo only raises `DuplicateEmailError` for that constraint and re-raises any other `IntegrityError`; white-box `tests/members/test_member_repository.py`
+- [x] 8.4 Pin `test_members_migration_is_reversible` to the explicit members revision/down_revision instead of relative `-1`/`head`

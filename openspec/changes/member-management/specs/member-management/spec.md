@@ -8,7 +8,7 @@ The application SHALL define a `Member` entity as a SQLModel table class with th
 |---|---|---|
 | `id` | `uuid.UUID` | PK, default UUIDv7 via `uuid_utils.uuid7()` |
 | `full_name` | `str` | Required, max 300 chars |
-| `email` | `str` | Required, max 320 chars, unique |
+| `email` | `str` | Required, max 320 chars, unique (constraint `uq_members_email`), valid format, normalized |
 | `status` | `MemberStatus` | Required, enum `active` / `suspended`, default `active` |
 | `created_at` | `datetime` | Server-default `now()`, not client-updatable |
 | `updated_at` | `datetime` | Server-default `now()`, auto-updated on modification |
@@ -31,6 +31,33 @@ The model SHALL also define separate Pydantic schemas for API boundaries: `Membe
 
 - **WHEN** a Member is created without an explicit `status`
 - **THEN** its `status` is `active`
+
+### Requirement: Email validation and normalization
+
+`MemberCreate` and `MemberUpdate` SHALL validate and normalize the `email`
+field at the schema boundary, mirroring the `isbn` validator pattern in the
+`books` slice: the value is trimmed and lowercased, then rejected if it does
+not match a basic `local@domain.tld` shape (no whitespace, exactly one `@`, a
+dotted domain). A `None` email on `MemberUpdate` bypasses validation.
+
+Because the value is lowercased before persistence, the `email` uniqueness
+constraint is effectively case-insensitive.
+
+#### Scenario: Invalid email rejected
+
+- **WHEN** a client sends `POST /members` or `PATCH /members/{member_id}` with an `email` that is not a valid address (e.g. `not-an-email`)
+- **THEN** the response status code is `422`
+
+#### Scenario: Email is normalized
+
+- **WHEN** a client sends `POST /members` with `email` `"  Ada@Example.COM  "`
+- **THEN** the created member's `email` is `ada@example.com`
+
+#### Scenario: Duplicate email is detected case-insensitively
+
+- **WHEN** a member with `email` `case@example.com` exists
+- **AND** a client sends `POST /members` with `email` `CASE@example.com`
+- **THEN** the response status code is `409`
 
 ### Requirement: Member repository abstraction
 
@@ -102,11 +129,11 @@ Query parameters:
 - **WHEN** a client sends `GET /members?size=101`
 - **THEN** the response status code is `422`
 
-### Requirement: Filter members by full_name and email
+### Requirement: Filter members by full_name, email and status
 
-`GET /members` SHALL accept optional `full_name` and `email` query parameters that filter results using a case-insensitive partial match (SQL `ILIKE`).
+`GET /members` SHALL accept optional `full_name` and `email` query parameters that filter results using a case-insensitive partial match (SQL `ILIKE`), and an optional `status` query parameter that filters by exact `MemberStatus` value (`active` or `suspended`).
 
-Both filters are independent and additive (AND logic when both are provided).
+All filters are independent and additive (AND logic when more than one is provided). An invalid `status` value yields `422`.
 
 #### Scenario: Filter by full_name
 
@@ -120,9 +147,19 @@ Both filters are independent and additive (AND logic when both are provided).
 - **WHEN** a client sends `GET /members?email=@example.com`
 - **THEN** only members whose `email` contains "@example.com" (case-insensitive) are returned
 
+#### Scenario: Filter by status
+
+- **WHEN** a client sends `GET /members?status=suspended`
+- **THEN** only members whose `status` is `suspended` are returned
+
+#### Scenario: Invalid status value
+
+- **WHEN** a client sends `GET /members?status=banned`
+- **THEN** the response status code is `422`
+
 #### Scenario: Combined filters
 
-- **WHEN** a client sends `GET /members?full_name=ana&email=@example.com`
+- **WHEN** a client sends `GET /members?full_name=ana&status=suspended`
 - **THEN** only members matching BOTH filters are returned
 
 #### Scenario: No matches
@@ -137,7 +174,7 @@ Both filters are independent and additive (AND logic when both are provided).
 
 | Parameter | Allowed values | Default |
 |---|---|---|
-| `sort_by` | `full_name`, `email`, `created_at` | `created_at` |
+| `sort_by` | `full_name`, `email`, `status`, `created_at` | `created_at` |
 | `order` | `asc`, `desc` | `desc` |
 
 #### Scenario: Sort by full_name ascending
@@ -244,7 +281,7 @@ The `Member` entity SHALL carry a `status` field with values `active` or `suspen
 
 ### Requirement: Members table migration
 
-The members table SHALL be created and managed via an Alembic migration, not via `SQLModel.metadata.create_all()`. The migration SHALL include the unique constraint on `email`.
+The members table SHALL be created and managed via an Alembic migration, not via `SQLModel.metadata.create_all()`. The migration SHALL include the unique constraint on `email`, explicitly named `uq_members_email` so the SQL repository can distinguish an email collision from any other integrity violation.
 
 #### Scenario: Migration creates the table
 
@@ -253,5 +290,6 @@ The members table SHALL be created and managed via an Alembic migration, not via
 
 #### Scenario: Migration is reversible
 
-- **WHEN** a developer runs `alembic downgrade -1` after applying the members migration
+- **WHEN** a developer downgrades the members revision after applying it
 - **THEN** the `members` table is dropped
+- **AND** re-applying the members revision recreates it
