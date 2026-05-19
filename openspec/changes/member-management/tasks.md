@@ -37,4 +37,4 @@
 
 - [x] 6.1 `make check` passes (lint + format) and `make coverage` is at/near 100% for the new slice
 - [x] 6.2 Update `CLAUDE.md` if any new convention/decision emerged during implementation — reviewed: no project-wide convention emerged. The 409-via-`DuplicateEmailError` placement and the deferred-modularization decision are change-scoped and captured in `design.md` + issue #25; nothing to add to `CLAUDE.md`.
-- [ ] 6.3 Open the PR with `Closes #21` in the body (not in commits), Conventional Commits title, commits grouped by the sections above
+- [x] 6.3 Open the PR with `Closes #21` in the body (not in commits), Conventional Commits title, commits grouped by the sections above — PR #26
