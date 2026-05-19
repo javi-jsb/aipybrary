@@ -5,7 +5,7 @@ from math import ceil
 
 import uuid_utils
 from pydantic import computed_field, field_validator
-from sqlalchemy import Text, text
+from sqlalchemy import Text, UniqueConstraint, text
 from sqlmodel import Field, SQLModel
 
 
@@ -51,13 +51,17 @@ def _validate_isbn(v: str | None) -> str | None:
     return stripped
 
 
+ISBN_CONSTRAINT = "uq_books_isbn"
+
+
 class Book(SQLModel, table=True):
     __tablename__ = "books"
+    __table_args__ = (UniqueConstraint("isbn", name=ISBN_CONSTRAINT),)
 
     id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
     title: str = Field(max_length=500)
     author: str = Field(max_length=300)
-    isbn: str | None = Field(default=None, max_length=13, unique=True)
+    isbn: str | None = Field(default=None, max_length=13)
     publication_year: int | None = None
     synopsis: str | None = Field(default=None, sa_type=Text())
     created_at: datetime = Field(
