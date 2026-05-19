@@ -1,11 +1,29 @@
 import uuid
 
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy, SortOrder
+from app.books.domain.book_exceptions import DuplicateIsbnError
+from app.books.domain.book_model import (
+    ISBN_CONSTRAINT,
+    Book,
+    BookCreate,
+    BookUpdate,
+    SortBy,
+    SortOrder,
+)
 from app.books.domain.book_repository import BookRepository
+
+
+def _is_isbn_conflict(exc: IntegrityError) -> bool:
+    """True only when the violated constraint is the isbn unique index.
+
+    Any other IntegrityError (e.g. a NOT NULL violation) is left to propagate
+    untouched rather than being mislabelled as a duplicate-isbn 409.
+    """
+    return exc.orig is not None and ISBN_CONSTRAINT in str(exc.orig)
 
 
 class SqlModelBookRepository(BookRepository):
@@ -15,7 +33,13 @@ class SqlModelBookRepository(BookRepository):
     async def create(self, data: BookCreate) -> Book:
         book = Book.model_validate(data)
         self._session.add(book)
-        await self._session.commit()
+        try:
+            await self._session.commit()
+        except IntegrityError as exc:
+            await self._session.rollback()
+            if _is_isbn_conflict(exc):
+                raise DuplicateIsbnError from exc
+            raise
         await self._session.refresh(book)
         return book
 
@@ -55,7 +79,13 @@ class SqlModelBookRepository(BookRepository):
     async def update(self, book: Book, data: BookUpdate) -> Book:
         book.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(book)
-        await self._session.commit()
+        try:
+            await self._session.commit()
+        except IntegrityError as exc:
+            await self._session.rollback()
+            if _is_isbn_conflict(exc):
+                raise DuplicateIsbnError from exc
+            raise
         await self._session.refresh(book)
         return book
 
