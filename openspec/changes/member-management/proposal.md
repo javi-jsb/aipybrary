@@ -11,8 +11,9 @@
 - Member carries a lifecycle `status` (`active` / `suspended`). It is functionally inert in this phase but is introduced now because Phase 3 (`lending`, #23) will forbid suspended members from borrowing.
 - Add a reversible Alembic migration creating the `members` table (not `SQLModel.metadata.create_all()`).
 - Enforce a unique constraint on member `email`.
+- Extend `scripts/seed.py` with example members and make seeding idempotent **per entity** (books and members checked independently). This carries a `database-seeding` delta, mirroring how `books-crud` and `book-list-enhancements` bundled their seeding deltas into their own feature change.
 
-Out of scope: `Loan`, `BookCopy`, reservations, genre/category, author-as-entity. No changes to the `books` slice.
+Out of scope: `Loan`, `BookCopy`, reservations, genre/category, author-as-entity. No changes to the `books` slice (the `database-seeding` change refactors `scripts/seed.py`, not the `books/` slice).
 
 ## Capabilities
 
@@ -22,11 +23,12 @@ Out of scope: `Loan`, `BookCopy`, reservations, genre/category, author-as-entity
 
 ### Modified Capabilities
 
-<!-- None. This change is purely additive: a new slice and a new table. It does not alter the requirements of book-management, book-list-query, database-connectivity, database-seeding, or health-check. -->
+- `database-seeding`: adds a requirement that `scripts/seed.py` also seeds example members, and makes idempotency per-entity (seed books iff no books; seed members iff no members) so neither is skipped because the other has data. No other seeding behaviour changes.
 
 ## Impact
 
 - **New code**: `src/app/members/` (`domain/`, `application/`, `infrastructure/`), router registration in `src/app/main.py`.
+- **Seed**: `scripts/seed.py` gains a `SAMPLE_MEMBERS` set and per-entity idempotency; the existing book-seeding behaviour and its idempotency are preserved.
 - **Database**: new `members` table via a new Alembic migration in `alembic/versions/`; reversible (downgrade drops the table).
 - **API**: new `/members` endpoint family. No existing endpoints change.
 - **Dependencies**: none expected — reuses existing stack (FastAPI, SQLModel, `uuid_utils`, Alembic, pytest).

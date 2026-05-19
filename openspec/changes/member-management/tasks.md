@@ -33,6 +33,12 @@
 - [x] 5.5 API tests for every spec scenario: create (201 / 422 missing fields / 409 duplicate email), list — pagination (empty, default page, second page, `page=0` → 422, `size=101` → 422), filtering (`full_name`, `email`, combined AND, no matches), sorting (`full_name asc`, default `created_at desc`, invalid `sort_by` → 422); get (200/404), patch (partial update / 404 / 409 duplicate email / suspend), delete (204/404)
 - [x] 5.6 Migration test: table created with `email` unique constraint; downgrade drops it
 
+## 7. Seeding (database-seeding delta)
+
+- [x] 7.1 Add a `SAMPLE_MEMBERS` list to `scripts/seed.py` (12 members: 9 `active` + 3 `suspended`, unique emails), reusing `app.members.domain.member_model` and the app database module
+- [x] 7.2 Refactor `seed()` to per-entity idempotency: seed books iff no books exist, seed members iff no members exist (independent checks; preserves the existing book-seeding behaviour) — verified live: members seeded with books already present; second run idempotent
+- [x] 7.3 Add the `database-seeding` delta spec under `specs/database-seeding/spec.md` (ADDED requirements only) and reflect it in `proposal.md` (Modified Capabilities) and `design.md`
+
 ## 6. Verification & docs
 
 - [x] 6.1 `make check` passes (lint + format) and `make coverage` is at/near 100% for the new slice
