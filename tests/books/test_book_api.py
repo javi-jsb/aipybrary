@@ -265,3 +265,39 @@ async def test_delete_book(client: AsyncClient) -> None:
 async def test_delete_book_not_found(client: AsyncClient) -> None:
     response = await client.delete(f"/books/{uuid.uuid4()}")
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Duplicate ISBN (409)
+# ---------------------------------------------------------------------------
+
+
+async def test_create_book_duplicate_isbn(client: AsyncClient) -> None:
+    await _create_book(client, isbn="9780060934347")
+    response = await client.post(
+        "/books",
+        json={"title": "Other", "author": "Other", "isbn": "9780060934347"},
+    )
+    assert response.status_code == 409
+
+
+async def test_update_book_duplicate_isbn(client: AsyncClient) -> None:
+    await _create_book(client, title="First", isbn="9780060934347")
+    second = await _create_book(client, title="Second", isbn="0306406152")
+
+    response = await client.patch(f"/books/{second['id']}", json={"isbn": "9780060934347"})
+    assert response.status_code == 409
+
+
+async def test_create_books_with_distinct_isbns(client: AsyncClient) -> None:
+    first = await _create_book(client, isbn="9780060934347")
+    second = await _create_book(client, isbn="0306406152")
+    assert first["isbn"] == "9780060934347"
+    assert second["isbn"] == "0306406152"
+
+
+async def test_create_books_without_isbn_allows_multiple(client: AsyncClient) -> None:
+    first = await _create_book(client, title="No ISBN A")
+    second = await _create_book(client, title="No ISBN B")
+    assert first["isbn"] is None
+    assert second["isbn"] is None
