@@ -5,6 +5,7 @@ from app.members.domain.member_model import (
     MemberCreate,
     MemberListResponse,
     MemberPublic,
+    MemberStatus,
     MemberUpdate,
     SortBy,
     SortOrder,
@@ -26,13 +27,14 @@ class MemberService:
         self,
         full_name: str | None,
         email: str | None,
+        status: MemberStatus | None,
         sort_by: SortBy,
         order: SortOrder,
         page: int,
         size: int,
     ) -> MemberListResponse:
         members, total = await self._repository.get_filtered(
-            full_name, email, sort_by, order, page, size
+            full_name, email, status, sort_by, order, page, size
         )
         items = [MemberPublic.model_validate(m) for m in members]
         return MemberListResponse(items=items, total=total, page=page, size=size)

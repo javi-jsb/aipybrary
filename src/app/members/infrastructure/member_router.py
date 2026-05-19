@@ -11,6 +11,7 @@ from app.members.domain.member_model import (
     MemberCreate,
     MemberListResponse,
     MemberPublic,
+    MemberStatus,
     MemberUpdate,
     SortBy,
     SortOrder,
@@ -36,10 +37,11 @@ async def list_members(
     size: Annotated[int, Query(ge=1, le=100)] = 20,
     full_name: str | None = None,
     email: str | None = None,
+    status: MemberStatus | None = None,
     sort_by: SortBy = SortBy.created_at,
     order: SortOrder = SortOrder.desc,
 ) -> MemberListResponse:
-    return await service.get_filtered(full_name, email, sort_by, order, page, size)
+    return await service.get_filtered(full_name, email, status, sort_by, order, page, size)
 
 
 @router.get("/{member_id}", response_model=MemberPublic)

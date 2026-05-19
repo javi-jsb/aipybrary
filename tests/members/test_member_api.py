@@ -67,6 +67,27 @@ async def test_create_member_duplicate_email(client: AsyncClient) -> None:
     assert response.status_code == 409
 
 
+async def test_create_member_invalid_email(client: AsyncClient) -> None:
+    response = await client.post("/members", json={"full_name": "Bad", "email": "not-an-email"})
+    assert response.status_code == 422
+
+
+async def test_create_member_normalizes_email(client: AsyncClient) -> None:
+    response = await client.post(
+        "/members", json={"full_name": "Ada", "email": "  Ada@Example.COM  "}
+    )
+    assert response.status_code == 201
+    assert response.json()["email"] == "ada@example.com"
+
+
+async def test_create_member_duplicate_email_is_case_insensitive(client: AsyncClient) -> None:
+    await _create_member(client, email="case@example.com")
+    response = await client.post(
+        "/members", json={"full_name": "Other", "email": "CASE@example.com"}
+    )
+    assert response.status_code == 409
+
+
 # ---------------------------------------------------------------------------
 # Read single
 # ---------------------------------------------------------------------------
@@ -182,6 +203,34 @@ async def test_list_members_filter_no_matches(client: AsyncClient) -> None:
     assert data["total"] == 0
 
 
+async def test_list_members_filter_by_status(client: AsyncClient) -> None:
+    await _create_member(client, full_name="Active One")
+    await _create_member(client, full_name="Suspended One", status="suspended")
+
+    response = await client.get("/members?status=suspended")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["full_name"] == "Suspended One"
+
+
+async def test_list_members_filter_by_status_combined_with_name(client: AsyncClient) -> None:
+    await _create_member(client, full_name="Ana", status="suspended")
+    await _create_member(client, full_name="Ana", status="active")
+    await _create_member(client, full_name="Bob", status="suspended")
+
+    response = await client.get("/members?full_name=ana&status=suspended")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["status"] == "suspended"
+
+
+async def test_list_members_invalid_status_rejected(client: AsyncClient) -> None:
+    response = await client.get("/members?status=banned")
+    assert response.status_code == 422
+
+
 # ---------------------------------------------------------------------------
 # List — sorting
 # ---------------------------------------------------------------------------
@@ -207,6 +256,16 @@ async def test_list_members_default_sort_created_at_desc(client: AsyncClient) ->
     items = response.json()["items"]
     assert items[0]["id"] == second["id"]
     assert items[1]["id"] == first["id"]
+
+
+async def test_list_members_sort_by_status_asc(client: AsyncClient) -> None:
+    await _create_member(client, full_name="S", status="suspended")
+    await _create_member(client, full_name="A", status="active")
+
+    response = await client.get("/members?sort_by=status&order=asc")
+    assert response.status_code == 200
+    statuses = [item["status"] for item in response.json()["items"]]
+    assert statuses == ["active", "suspended"]
 
 
 async def test_list_members_invalid_sort_by_rejected(client: AsyncClient) -> None:
@@ -252,6 +311,12 @@ async def test_update_member_duplicate_email(client: AsyncClient) -> None:
 
     response = await client.patch(f"/members/{second['id']}", json={"email": first["email"]})
     assert response.status_code == 409
+
+
+async def test_update_member_invalid_email(client: AsyncClient) -> None:
+    data = await _create_member(client)
+    response = await client.patch(f"/members/{data['id']}", json={"email": "nope"})
+    assert response.status_code == 422
 
 
 # ---------------------------------------------------------------------------

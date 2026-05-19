@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from app.members.domain.member_model import (
     Member,
     MemberCreate,
+    MemberStatus,
     MemberUpdate,
     SortBy,
     SortOrder,
@@ -22,6 +23,7 @@ class MemberRepository(ABC):
         self,
         full_name: str | None,
         email: str | None,
+        status: MemberStatus | None,
         sort_by: SortBy,
         order: SortOrder,
         page: int,

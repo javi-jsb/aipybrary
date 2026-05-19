@@ -7,13 +7,24 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.members.domain.member_exceptions import DuplicateEmailError
 from app.members.domain.member_model import (
+    EMAIL_CONSTRAINT,
     Member,
     MemberCreate,
+    MemberStatus,
     MemberUpdate,
     SortBy,
     SortOrder,
 )
 from app.members.domain.member_repository import MemberRepository
+
+
+def _is_email_conflict(exc: IntegrityError) -> bool:
+    """True only when the violated constraint is the email unique index.
+
+    Any other IntegrityError (e.g. a NOT NULL violation) is left to propagate
+    untouched rather than being mislabelled as a duplicate-email 409.
+    """
+    return exc.orig is not None and EMAIL_CONSTRAINT in str(exc.orig)
 
 
 class SqlModelMemberRepository(MemberRepository):
@@ -27,7 +38,9 @@ class SqlModelMemberRepository(MemberRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            raise DuplicateEmailError from exc
+            if _is_email_conflict(exc):
+                raise DuplicateEmailError from exc
+            raise
         await self._session.refresh(member)
         return member
 
@@ -38,6 +51,7 @@ class SqlModelMemberRepository(MemberRepository):
         self,
         full_name: str | None,
         email: str | None,
+        status: MemberStatus | None,
         sort_by: SortBy,
         order: SortOrder,
         page: int,
@@ -48,6 +62,8 @@ class SqlModelMemberRepository(MemberRepository):
             conditions.append(col(Member.full_name).ilike(f"%{full_name}%"))
         if email:
             conditions.append(col(Member.email).ilike(f"%{email}%"))
+        if status is not None:
+            conditions.append(col(Member.status) == status)
 
         sort_attr = getattr(Member, sort_by.value)
         ordered = sort_attr.desc() if order == SortOrder.desc else sort_attr.asc()
@@ -71,7 +87,9 @@ class SqlModelMemberRepository(MemberRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            raise DuplicateEmailError from exc
+            if _is_email_conflict(exc):
+                raise DuplicateEmailError from exc
+            raise
         await self._session.refresh(member)
         return member
 

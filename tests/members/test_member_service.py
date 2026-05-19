@@ -6,6 +6,7 @@ from app.members.application.member_service import MemberService
 from app.members.domain.member_model import (
     Member,
     MemberCreate,
+    MemberStatus,
     MemberUpdate,
     SortBy,
     SortOrder,
@@ -29,6 +30,7 @@ class FakeMemberRepository(MemberRepository):
         self,
         full_name: str | None,
         email: str | None,
+        status: MemberStatus | None,
         sort_by: SortBy,
         order: SortOrder,
         page: int,
@@ -39,6 +41,8 @@ class FakeMemberRepository(MemberRepository):
             members = [m for m in members if full_name.lower() in m.full_name.lower()]
         if email:
             members = [m for m in members if email.lower() in m.email.lower()]
+        if status is not None:
+            members = [m for m in members if m.status == status]
         total = len(members)
         offset = (page - 1) * size
         return members[offset : offset + size], total
@@ -78,7 +82,7 @@ async def test_get_by_id_missing() -> None:
 
 async def test_get_filtered_empty() -> None:
     service = _make_service()
-    result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 20)
+    result = await service.get_filtered(None, None, None, SortBy.created_at, SortOrder.desc, 1, 20)
     assert result.items == []
     assert result.total == 0
     assert result.pages == 0
@@ -88,7 +92,7 @@ async def test_get_filtered_with_members() -> None:
     service = _make_service()
     await service.create(MemberCreate(full_name="A", email="a@example.com"))
     await service.create(MemberCreate(full_name="B", email="b@example.com"))
-    result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 20)
+    result = await service.get_filtered(None, None, None, SortBy.created_at, SortOrder.desc, 1, 20)
     assert len(result.items) == 2
     assert result.total == 2
     assert result.pages == 1
@@ -98,10 +102,27 @@ async def test_get_filtered_pagination() -> None:
     service = _make_service()
     for i in range(5):
         await service.create(MemberCreate(full_name=f"M{i}", email=f"m{i}@example.com"))
-    result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 3)
+    result = await service.get_filtered(None, None, None, SortBy.created_at, SortOrder.desc, 1, 3)
     assert len(result.items) == 3
     assert result.total == 5
     assert result.pages == 2
+
+
+async def test_get_filtered_by_status() -> None:
+    service = _make_service()
+    await service.create(MemberCreate(full_name="Active", email="active@example.com"))
+    await service.create(
+        MemberCreate(
+            full_name="Suspended",
+            email="suspended@example.com",
+            status=MemberStatus.suspended,
+        )
+    )
+    result = await service.get_filtered(
+        None, None, MemberStatus.suspended, SortBy.created_at, SortOrder.desc, 1, 20
+    )
+    assert result.total == 1
+    assert result.items[0].status is MemberStatus.suspended
 
 
 async def test_update_existing() -> None:
