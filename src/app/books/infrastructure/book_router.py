@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.books.application.book_service import BookService
+from app.books.domain.book_exceptions import DuplicateIsbnError
 from app.books.domain.book_model import (
     BookCreate,
     BookListResponse,
@@ -17,6 +18,8 @@ from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
 from app.database import get_session
 
 router = APIRouter(prefix="/books", tags=["books"])
+
+_DUPLICATE_ISBN_DETAIL = "ISBN already registered"
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> BookService:
@@ -49,13 +52,23 @@ async def get_book(book_id: uuid.UUID, service: ServiceDep) -> BookPublic:
 
 @router.post("", response_model=BookPublic, status_code=status.HTTP_201_CREATED)
 async def create_book(data: BookCreate, service: ServiceDep) -> BookPublic:
-    book = await service.create(data)
+    try:
+        book = await service.create(data)
+    except DuplicateIsbnError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL
+        ) from None
     return BookPublic.model_validate(book)
 
 
 @router.patch("/{book_id}", response_model=BookPublic)
 async def update_book(book_id: uuid.UUID, data: BookUpdate, service: ServiceDep) -> BookPublic:
-    book = await service.update(book_id, data)
+    try:
+        book = await service.update(book_id, data)
+    except DuplicateIsbnError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL
+        ) from None
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
     return BookPublic.model_validate(book)
