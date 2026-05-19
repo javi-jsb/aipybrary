@@ -1,4 +1,8 @@
-"""Seed the database with example books. Idempotent — skips if books already exist."""
+"""Seed the database with example books and members.
+
+Idempotent per entity: books are seeded only if no books exist, members only if
+no members exist — seeding one is never skipped because the other has data.
+"""
 
 import asyncio
 import sys
@@ -10,6 +14,11 @@ from sqlmodel import select  # noqa: E402
 
 from app.books.domain.book_model import Book, BookCreate  # noqa: E402
 from app.database import async_session  # noqa: E402
+from app.members.domain.member_model import (  # noqa: E402
+    Member,
+    MemberCreate,
+    MemberStatus,
+)
 
 SAMPLE_BOOKS = [
     # Hispanic literature
@@ -174,19 +183,52 @@ SAMPLE_BOOKS = [
 ]
 
 
+SAMPLE_MEMBERS = [
+    MemberCreate(full_name="Ada Lovelace", email="ada.lovelace@example.com"),
+    MemberCreate(full_name="Alan Turing", email="alan.turing@example.com"),
+    MemberCreate(full_name="Grace Hopper", email="grace.hopper@example.com"),
+    MemberCreate(full_name="Katherine Johnson", email="katherine.johnson@example.com"),
+    MemberCreate(full_name="Edsger Dijkstra", email="edsger.dijkstra@example.com"),
+    MemberCreate(full_name="Barbara Liskov", email="barbara.liskov@example.com"),
+    MemberCreate(full_name="Donald Knuth", email="donald.knuth@example.com"),
+    MemberCreate(full_name="Margaret Hamilton", email="margaret.hamilton@example.com"),
+    MemberCreate(full_name="Tim Berners-Lee", email="tim.bernerslee@example.com"),
+    # Suspended members — exercise status filtering/sorting
+    MemberCreate(
+        full_name="Ken Thompson",
+        email="ken.thompson@example.com",
+        status=MemberStatus.suspended,
+    ),
+    MemberCreate(
+        full_name="Dennis Ritchie",
+        email="dennis.ritchie@example.com",
+        status=MemberStatus.suspended,
+    ),
+    MemberCreate(
+        full_name="Linus Torvalds",
+        email="linus.torvalds@example.com",
+        status=MemberStatus.suspended,
+    ),
+]
+
+
 async def seed() -> None:
     async with async_session() as session:
-        result = await session.exec(select(Book).limit(1))
-        if result.first() is not None:
-            print("Database already contains books — skipping seed.")
-            return
+        if (await session.exec(select(Book).limit(1))).first() is not None:
+            print("Database already contains books — skipping book seed.")
+        else:
+            for book_data in SAMPLE_BOOKS:
+                session.add(Book.model_validate(book_data))
+            await session.commit()
+            print(f"Seeded {len(SAMPLE_BOOKS)} books.")
 
-        for data in SAMPLE_BOOKS:
-            book = Book.model_validate(data)
-            session.add(book)
-
-        await session.commit()
-        print(f"Seeded {len(SAMPLE_BOOKS)} books.")
+        if (await session.exec(select(Member).limit(1))).first() is not None:
+            print("Database already contains members — skipping member seed.")
+        else:
+            for member_data in SAMPLE_MEMBERS:
+                session.add(Member.model_validate(member_data))
+            await session.commit()
+            print(f"Seeded {len(SAMPLE_MEMBERS)} members.")
 
 
 if __name__ == "__main__":
