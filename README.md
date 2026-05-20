@@ -1,5 +1,8 @@
 # aipybrary
 
+[![CI](https://github.com/javi-jsb/aipybrary/actions/workflows/ci.yml/badge.svg)](https://github.com/javi-jsb/aipybrary/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/javi-jsb/36ba6bf5a954d5bafa0aa417b0100ba8/raw/aipybrary-coverage.json)](https://github.com/javi-jsb/aipybrary/actions/workflows/ci.yml)
+
 *Built entirely with AI assistance as a personal learning and training project.*
 
 A book library REST API built with Python, FastAPI, and SQLModel, backed by PostgreSQL.
