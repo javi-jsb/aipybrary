@@ -8,12 +8,16 @@ test_book_api.py against Postgres. These tests isolate the branch that must
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.books.domain.book_exceptions import DuplicateIsbnError
+from app.books.domain.book_exceptions import BookHasCopiesError, DuplicateIsbnError
 from app.books.domain.book_model import Book, BookCreate, BookUpdate
 from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
 
 _ISBN_VIOLATION = Exception('duplicate key value violates unique constraint "uq_books_isbn"')
 _OTHER_VIOLATION = Exception('null value in column "title" violates not-null constraint')
+_BOOK_COPIES_FK_VIOLATION = Exception(
+    'update or delete on table "books" violates foreign key constraint'
+    ' "fk_book_copies_book_id_books" on table "book_copies"'
+)
 
 
 class _StubSession:
@@ -65,3 +69,36 @@ async def test_update_reraises_unrelated_integrity_error() -> None:
     book = Book(title="A", author="B")
     with pytest.raises(IntegrityError):
         await repo.update(book, BookUpdate(title="C"))
+
+
+class _DeleteStubSession:
+    def __init__(self, error: Exception) -> None:
+        self._error = error
+        self.rolled_back = False
+
+    async def delete(self, _obj: object) -> None:
+        pass
+
+    async def commit(self) -> None:
+        raise IntegrityError("stmt", {}, self._error)
+
+    async def rollback(self) -> None:
+        self.rolled_back = True
+
+
+async def test_delete_maps_book_copies_fk_to_domain_error() -> None:
+    session = _DeleteStubSession(_BOOK_COPIES_FK_VIOLATION)
+    repo = SqlModelBookRepository(session)  # type: ignore[arg-type]
+    book = Book(title="A", author="B")
+    with pytest.raises(BookHasCopiesError):
+        await repo.delete(book)
+    assert session.rolled_back is True
+
+
+async def test_delete_reraises_unrelated_integrity_error() -> None:
+    session = _DeleteStubSession(_OTHER_VIOLATION)
+    repo = SqlModelBookRepository(session)  # type: ignore[arg-type]
+    book = Book(title="A", author="B")
+    with pytest.raises(IntegrityError):
+        await repo.delete(book)
+    assert session.rolled_back is True

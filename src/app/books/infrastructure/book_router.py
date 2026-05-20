@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.books.application.book_service import BookService
-from app.books.domain.book_exceptions import DuplicateIsbnError
+from app.books.domain.book_exceptions import BookHasCopiesError, DuplicateIsbnError
 from app.books.domain.book_model import (
     BookCreate,
     BookListResponse,
@@ -20,6 +20,7 @@ from app.database import get_session
 router = APIRouter(prefix="/books", tags=["books"])
 
 _DUPLICATE_ISBN_DETAIL = "ISBN already registered"
+_HAS_COPIES_DETAIL = "Book has copies and cannot be deleted"
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> BookService:
@@ -47,18 +48,17 @@ async def get_book(book_id: uuid.UUID, service: ServiceDep) -> BookPublic:
     book = await service.get_by_id(book_id)
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
-    return BookPublic.model_validate(book)
+    return book
 
 
 @router.post("", response_model=BookPublic, status_code=status.HTTP_201_CREATED)
 async def create_book(data: BookCreate, service: ServiceDep) -> BookPublic:
     try:
-        book = await service.create(data)
+        return await service.create(data)
     except DuplicateIsbnError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL
         ) from None
-    return BookPublic.model_validate(book)
 
 
 @router.patch("/{book_id}", response_model=BookPublic)
@@ -71,11 +71,16 @@ async def update_book(book_id: uuid.UUID, data: BookUpdate, service: ServiceDep)
         ) from None
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
-    return BookPublic.model_validate(book)
+    return book
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: uuid.UUID, service: ServiceDep) -> None:
-    deleted = await service.delete(book_id)
+    try:
+        deleted = await service.delete(book_id)
+    except BookHasCopiesError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=_HAS_COPIES_DETAIL
+        ) from None
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")

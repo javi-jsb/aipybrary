@@ -6,6 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlmodel import SQLModel
 
+import app.book_copies.domain.book_copy_model  # noqa: F401 — register models with metadata
 import app.books.domain.book_model  # noqa: F401 — register models with metadata
 import app.members.domain.member_model  # noqa: F401 — register models with metadata
 from alembic import context
