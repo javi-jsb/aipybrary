@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: aipybrary
+          POSTGRES_PASSWORD: aipybrary
+          POSTGRES_DB: aipybrary_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync --frozen
+
+      - name: Lint
+        run: make check
+
+      - name: Test
+        run: make coverage
+        env:
+          POSTGRES_USER: aipybrary
+          POSTGRES_PASSWORD: aipybrary
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: aipybrary_test
+          POSTGRES_TEST_DB: aipybrary_test
+
+      - name: Extract coverage percentage
+        run: echo "COVERAGE=$(uv run coverage report --format=total)" >> $GITHUB_ENV
+
+      - name: Update coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: Schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: 36ba6bf5a954d5bafa0aa417b0100ba8
+          filename: aipybrary-coverage.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          valColorRange: ${{ env.COVERAGE }}
+          maxColorRange: 100
+          minColorRange: 0

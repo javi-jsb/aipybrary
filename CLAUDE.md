@@ -63,13 +63,30 @@ Pinning policy:
 - Every PR that modifies `pyproject.toml` or `uv.lock` must have its dependency diff reviewed explicitly before merge
 - In automated environments (CI, prod, once they exist), use `uv sync --frozen` so resolution is forbidden
 
-### Testing
+### Development commands
 
+All commands go through the Makefile — never call `uv run ...` directly.
+
+**Dev**
+- `make dev` — start the FastAPI development server
+
+**Database**
+- `make db-up` — start PostgreSQL via Docker Compose
+- `make db-down` — stop and remove Docker containers
+- `make db-migrate` — apply Alembic migrations (`upgrade head`)
+- `make db-seed` — seed the database with sample data
+
+**Testing**
 - `make test` — run the test suite
 - `make coverage` — run tests with coverage; produces a terminal report (missing lines) and an HTML report in `htmlcov/`
-- `make check` — lint and format verification (read-only); `make format` applies fixes
-- Coverage target: tests should aim for close to 100%. Use `# pragma: no cover` only for genuinely untestable lines — abstract method stubs and dependency-injection wiring that is replaced in tests.
-- Run `make help` for the full list of targets — the Makefile is the source of truth
+
+**Code quality**
+- `make check` — lint and format verification (read-only)
+- `make format` — auto-format the codebase
+
+Coverage target: tests should aim for close to 100%. Use `# pragma: no cover` only for genuinely untestable lines — abstract method stubs and dependency-injection wiring that is replaced in tests.
+
+Note: the `db_setup` fixture in `tests/conftest.py` runs Alembic migrations automatically before each test (`upgrade head`) and rolls them back after (`downgrade base`). No explicit migration step is needed in CI.
 
 ### OpenSpec workflow
 
