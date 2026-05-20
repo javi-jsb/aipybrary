@@ -6,16 +6,31 @@ from app.books.domain.book_repository import BookRepository
 
 
 class FakeBookRepository(BookRepository):
+    """In-memory repository that simulates the (Book, copies_total) tuples the
+    SQL repository returns. Copy counts are populated by tests via
+    ``set_copies(book_id, n)``.
+    """
+
     def __init__(self) -> None:
         self._books: dict[uuid.UUID, Book] = {}
+        self._copies: dict[uuid.UUID, int] = {}
+
+    def set_copies(self, book_id: uuid.UUID, n: int) -> None:
+        self._copies[book_id] = n
+
+    def _count(self, book_id: uuid.UUID) -> int:
+        return self._copies.get(book_id, 0)
 
     async def create(self, data: BookCreate) -> Book:
         book = Book.model_validate(data)
         self._books[book.id] = book
         return book
 
-    async def get_by_id(self, book_id: uuid.UUID) -> Book | None:
-        return self._books.get(book_id)
+    async def get_by_id(self, book_id: uuid.UUID) -> tuple[Book, int] | None:
+        book = self._books.get(book_id)
+        if book is None:
+            return None
+        return book, self._count(book_id)
 
     async def get_filtered(
         self,
@@ -25,7 +40,7 @@ class FakeBookRepository(BookRepository):
         order: SortOrder,
         page: int,
         size: int,
-    ) -> tuple[list[Book], int]:
+    ) -> tuple[list[tuple[Book, int]], int]:
         books = list(self._books.values())
         if title:
             books = [b for b in books if title.lower() in b.title.lower()]
@@ -33,30 +48,34 @@ class FakeBookRepository(BookRepository):
             books = [b for b in books if author.lower() in b.author.lower()]
         total = len(books)
         offset = (page - 1) * size
-        return books[offset : offset + size], total
+        sliced = books[offset : offset + size]
+        return [(b, self._count(b.id)) for b in sliced], total
 
-    async def update(self, book: Book, data: BookUpdate) -> Book:
+    async def update(self, book: Book, data: BookUpdate) -> tuple[Book, int]:
         book.sqlmodel_update(data.model_dump(exclude_unset=True))
-        return book
+        return book, self._count(book.id)
 
     async def delete(self, book: Book) -> None:
         self._books.pop(book.id, None)
+        self._copies.pop(book.id, None)
 
 
-def _make_service() -> BookService:
-    return BookService(FakeBookRepository())
+def _make_service() -> tuple[BookService, FakeBookRepository]:
+    repo = FakeBookRepository()
+    return BookService(repo), repo
 
 
 async def test_create_book() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     book = await service.create(BookCreate(title="Test", author="Author"))
     assert book.title == "Test"
     assert book.author == "Author"
     assert book.id is not None
+    assert book.copies_total == 0
 
 
 async def test_get_by_id_existing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     created = await service.create(BookCreate(title="Test", author="Author"))
     found = await service.get_by_id(created.id)
     assert found is not None
@@ -64,13 +83,22 @@ async def test_get_by_id_existing() -> None:
 
 
 async def test_get_by_id_missing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     result = await service.get_by_id(uuid.uuid4())
     assert result is None
 
 
+async def test_get_by_id_includes_copies_total() -> None:
+    service, repo = _make_service()
+    created = await service.create(BookCreate(title="Test", author="Author"))
+    repo.set_copies(created.id, 5)
+    found = await service.get_by_id(created.id)
+    assert found is not None
+    assert found.copies_total == 5
+
+
 async def test_get_filtered_empty() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 20)
     assert result.items == []
     assert result.total == 0
@@ -78,17 +106,18 @@ async def test_get_filtered_empty() -> None:
 
 
 async def test_get_filtered_with_books() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     await service.create(BookCreate(title="A", author="X"))
     await service.create(BookCreate(title="B", author="Y"))
     result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 20)
     assert len(result.items) == 2
     assert result.total == 2
     assert result.pages == 1
+    assert all(item.copies_total == 0 for item in result.items)
 
 
 async def test_get_filtered_pagination() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     for i in range(5):
         await service.create(BookCreate(title=f"Book {i}", author="Author"))
     result = await service.get_filtered(None, None, SortBy.created_at, SortOrder.desc, 1, 3)
@@ -98,7 +127,7 @@ async def test_get_filtered_pagination() -> None:
 
 
 async def test_update_existing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     created = await service.create(BookCreate(title="Old", author="Author"))
     updated = await service.update(created.id, BookUpdate(title="New"))
     assert updated is not None
@@ -107,18 +136,18 @@ async def test_update_existing() -> None:
 
 
 async def test_update_missing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     result = await service.update(uuid.uuid4(), BookUpdate(title="X"))
     assert result is None
 
 
 async def test_delete_existing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     created = await service.create(BookCreate(title="Test", author="Author"))
     assert await service.delete(created.id) is True
     assert await service.get_by_id(created.id) is None
 
 
 async def test_delete_missing() -> None:
-    service = _make_service()
+    service, _ = _make_service()
     assert await service.delete(uuid.uuid4()) is False
