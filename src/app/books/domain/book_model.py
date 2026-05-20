@@ -107,6 +107,7 @@ class BookPublic(SQLModel):
     isbn: str | None
     publication_year: int | None
     synopsis: str | None
+    copies_total: int
     created_at: datetime
     updated_at: datetime
 
