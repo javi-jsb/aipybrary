@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_TEST_DB: str
 
+    LOAN_PERIOD_DAYS: int = 14
+    LOAN_MAX_ACTIVE: int = 3
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
