@@ -2,12 +2,12 @@ import uuid
 
 from app.books.application.book_service import BookService
 from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy, SortOrder
-from app.books.domain.book_repository import BookRepository
+from app.books.domain.book_repository import BookRepository, BookWithCounts
 
 
 class FakeBookRepository(BookRepository):
-    """In-memory repository that simulates the (Book, copies_total) tuples the
-    SQL repository returns. Copy counts are populated by tests via
+    """In-memory repository that simulates the (Book, copies_total, copies_available) tuples
+    the SQL repository returns. Copy counts are populated by tests via
     ``set_copies(book_id, n)``.
     """
 
@@ -26,11 +26,12 @@ class FakeBookRepository(BookRepository):
         self._books[book.id] = book
         return book
 
-    async def get_by_id(self, book_id: uuid.UUID) -> tuple[Book, int] | None:
+    async def get_by_id(self, book_id: uuid.UUID) -> BookWithCounts | None:
         book = self._books.get(book_id)
         if book is None:
             return None
-        return book, self._count(book_id)
+        n = self._count(book_id)
+        return BookWithCounts(book, n, n)
 
     async def get_filtered(
         self,
@@ -40,7 +41,7 @@ class FakeBookRepository(BookRepository):
         order: SortOrder,
         page: int,
         size: int,
-    ) -> tuple[list[tuple[Book, int]], int]:
+    ) -> tuple[list[BookWithCounts], int]:
         books = list(self._books.values())
         if title:
             books = [b for b in books if title.lower() in b.title.lower()]
@@ -49,11 +50,12 @@ class FakeBookRepository(BookRepository):
         total = len(books)
         offset = (page - 1) * size
         sliced = books[offset : offset + size]
-        return [(b, self._count(b.id)) for b in sliced], total
+        return [BookWithCounts(b, self._count(b.id), self._count(b.id)) for b in sliced], total
 
-    async def update(self, book: Book, data: BookUpdate) -> tuple[Book, int]:
+    async def update(self, book: Book, data: BookUpdate) -> BookWithCounts:
         book.sqlmodel_update(data.model_dump(exclude_unset=True))
-        return book, self._count(book.id)
+        n = self._count(book.id)
+        return BookWithCounts(book, n, n)
 
     async def delete(self, book: Book) -> None:
         self._books.pop(book.id, None)
@@ -72,6 +74,7 @@ async def test_create_book() -> None:
     assert book.author == "Author"
     assert book.id is not None
     assert book.copies_total == 0
+    assert book.copies_available == 0
 
 
 async def test_get_by_id_existing() -> None:

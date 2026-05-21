@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func
+from sqlalchemy import func, literal
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -15,24 +15,38 @@ from app.books.domain.book_model import (
     SortBy,
     SortOrder,
 )
-from app.books.domain.book_repository import BookRepository
+from app.books.domain.book_repository import BookRepository, BookWithCounts
+from app.loans.domain.loan_model import Loan
+
+_copies_total_sq = (
+    select(func.count(col(BookCopy.id)))
+    .where(col(BookCopy.book_id) == col(Book.id))
+    .correlate(Book)
+    .scalar_subquery()
+)
+
+_active_loan_for_copy = (
+    select(literal(1))
+    .where(col(Loan.book_copy_id) == col(BookCopy.id))
+    .where(col(Loan.returned_at).is_(None))
+)
+
+_copies_available_sq = (
+    select(func.count(col(BookCopy.id)))
+    .where(col(BookCopy.book_id) == col(Book.id))
+    .where(~_active_loan_for_copy.exists())
+    .correlate(Book)
+    .scalar_subquery()
+)
 
 
 def _is_isbn_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the isbn unique index.
-
-    Any other IntegrityError (e.g. a NOT NULL violation) is left to propagate
-    untouched rather than being mislabelled as a duplicate-isbn 409.
-    """
+    """True only when the violated constraint is the isbn unique index."""
     return exc.orig is not None and ISBN_CONSTRAINT in str(exc.orig)
 
 
 def _is_book_copies_fk_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the book_copies → books FK.
-
-    Any other IntegrityError is left to propagate untouched rather than being
-    mislabelled as a copies-blocking-delete 409.
-    """
+    """True only when the violated constraint is the book_copies → books FK."""
     return exc.orig is not None and BOOK_FK_CONSTRAINT in str(exc.orig)
 
 
@@ -53,18 +67,13 @@ class SqlModelBookRepository(BookRepository):
         await self._session.refresh(book)
         return book
 
-    async def get_by_id(self, book_id: uuid.UUID) -> tuple[Book, int] | None:
-        stmt = (
-            select(Book, func.count(col(BookCopy.id)))
-            .outerjoin(BookCopy, col(BookCopy.book_id) == col(Book.id))
-            .where(col(Book.id) == book_id)
-            .group_by(col(Book.id))
-        )
+    async def get_by_id(self, book_id: uuid.UUID) -> BookWithCounts | None:
+        stmt = select(Book, _copies_total_sq, _copies_available_sq).where(col(Book.id) == book_id)
         row = (await self._session.exec(stmt)).first()
         if row is None:
             return None
-        book, copies_total = row
-        return book, copies_total
+        book, copies_total, copies_available = row
+        return BookWithCounts(book, copies_total, copies_available)
 
     async def get_filtered(
         self,
@@ -74,7 +83,7 @@ class SqlModelBookRepository(BookRepository):
         order: SortOrder,
         page: int,
         size: int,
-    ) -> tuple[list[tuple[Book, int]], int]:
+    ) -> tuple[list[BookWithCounts], int]:
         conditions = []
         if title:
             conditions.append(col(Book.title).ilike(f"%{title}%"))
@@ -89,18 +98,14 @@ class SqlModelBookRepository(BookRepository):
             count_stmt = count_stmt.where(*conditions)
         total: int = (await self._session.exec(count_stmt)).one()
 
-        stmt = (
-            select(Book, func.count(col(BookCopy.id)))
-            .outerjoin(BookCopy, col(BookCopy.book_id) == col(Book.id))
-            .group_by(col(Book.id))
-        )
+        stmt = select(Book, _copies_total_sq, _copies_available_sq)
         if conditions:
             stmt = stmt.where(*conditions)
         stmt = stmt.order_by(ordered).offset((page - 1) * size).limit(size)
         result = await self._session.exec(stmt)
-        return [(book, copies) for book, copies in result.all()], total
+        return [BookWithCounts(book, ct, ca) for book, ct, ca in result.all()], total
 
-    async def update(self, book: Book, data: BookUpdate) -> tuple[Book, int]:
+    async def update(self, book: Book, data: BookUpdate) -> BookWithCounts:
         book.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(book)
         try:
@@ -111,9 +116,10 @@ class SqlModelBookRepository(BookRepository):
                 raise DuplicateIsbnError from exc
             raise
         await self._session.refresh(book)
-        count_stmt = select(func.count(col(BookCopy.id))).where(col(BookCopy.book_id) == book.id)
-        copies_total: int = (await self._session.exec(count_stmt)).one()
-        return book, copies_total
+        stmt = select(Book, _copies_total_sq, _copies_available_sq).where(col(Book.id) == book.id)
+        row = (await self._session.exec(stmt)).one()
+        _, copies_total, copies_available = row
+        return BookWithCounts(book, copies_total, copies_available)
 
     async def delete(self, book: Book) -> None:
         await self._session.delete(book)

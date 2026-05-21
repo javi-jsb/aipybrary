@@ -12,8 +12,10 @@ from app.books.domain.book_model import (
 from app.books.domain.book_repository import BookRepository
 
 
-def _to_public(book: Book, copies_total: int) -> BookPublic:
-    return BookPublic.model_validate({**book.model_dump(), "copies_total": copies_total})
+def _to_public(book: Book, copies_total: int, copies_available: int) -> BookPublic:
+    return BookPublic.model_validate(
+        {**book.model_dump(), "copies_total": copies_total, "copies_available": copies_available}
+    )
 
 
 class BookService:
@@ -23,14 +25,13 @@ class BookService:
     async def create(self, data: BookCreate) -> BookPublic:
         # A freshly created book always has zero copies; skip the count query.
         book = await self._repository.create(data)
-        return _to_public(book, 0)
+        return _to_public(book, 0, 0)
 
     async def get_by_id(self, book_id: uuid.UUID) -> BookPublic | None:
         result = await self._repository.get_by_id(book_id)
         if result is None:
             return None
-        book, copies_total = result
-        return _to_public(book, copies_total)
+        return _to_public(result.book, result.copies_total, result.copies_available)
 
     async def get_filtered(
         self,
@@ -41,22 +42,25 @@ class BookService:
         page: int,
         size: int,
     ) -> BookListResponse:
-        rows, total = await self._repository.get_filtered(title, author, sort_by, order, page, size)
-        items = [_to_public(book, copies) for book, copies in rows]
+        books_with_counts, total = await self._repository.get_filtered(
+            title, author, sort_by, order, page, size
+        )
+        items = [
+            _to_public(item.book, item.copies_total, item.copies_available)
+            for item in books_with_counts
+        ]
         return BookListResponse(items=items, total=total, page=page, size=size)
 
     async def update(self, book_id: uuid.UUID, data: BookUpdate) -> BookPublic | None:
         result = await self._repository.get_by_id(book_id)
         if result is None:
             return None
-        book, _ = result
-        updated, copies_total = await self._repository.update(book, data)
-        return _to_public(updated, copies_total)
+        updated = await self._repository.update(result.book, data)
+        return _to_public(updated.book, updated.copies_total, updated.copies_available)
 
     async def delete(self, book_id: uuid.UUID) -> bool:
         result = await self._repository.get_by_id(book_id)
         if result is None:
             return False
-        book, _ = result
-        await self._repository.delete(book)
+        await self._repository.delete(result.book)
         return True
