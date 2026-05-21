@@ -1,24 +1,33 @@
-"""Seed the database with example books and members.
+"""Seed the database with example books, members, book copies, and loans.
 
-Idempotent per entity: books are seeded only if no books exist, members only if
-no members exist — seeding one is never skipped because the other has data.
+Idempotent per entity: each block is seeded only if no records of that type
+exist — seeding one entity type is never skipped because another has data.
+Seeding order: books → members → book copies → loans.
 """
 
 import asyncio
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from sqlmodel import select  # noqa: E402
 
+from app.book_copies.domain.book_copy_model import BookCopy  # noqa: E402
 from app.books.domain.book_model import Book, BookCreate  # noqa: E402
 from app.database import async_session  # noqa: E402
+from app.loans.domain.loan_model import Loan  # noqa: E402
 from app.members.domain.member_model import (  # noqa: E402
     Member,
     MemberCreate,
     MemberStatus,
 )
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
 
 SAMPLE_BOOKS = [
     # Hispanic literature
@@ -229,6 +238,97 @@ async def seed() -> None:
                 session.add(Member.model_validate(member_data))
             await session.commit()
             print(f"Seeded {len(SAMPLE_MEMBERS)} members.")
+
+        if (await session.exec(select(BookCopy).limit(1))).first() is not None:
+            print("Database already contains book copies — skipping book copy seed.")
+        else:
+            # Look up book ISBNs to find specific book IDs for the copies.
+            books_by_isbn: dict[str, Book] = {}
+            for book in (await session.exec(select(Book))).all():
+                if book.isbn:
+                    books_by_isbn[book.isbn] = book
+
+            copies_added = 0
+            copy_specs = [
+                # Don Quixote — 2 copies
+                ("9780060934347", "DQ-001"),
+                ("9780060934347", "DQ-002"),
+                # One Hundred Years — 2 copies
+                ("9780060883287", "OHY-001"),
+                ("9780060883287", "OHY-002"),
+                # Crime and Punishment — 2 copies
+                ("9780140449136", "CP-001"),
+                ("9780140449136", "CP-002"),
+                # Solaris — 1 copy
+                ("9780156837507", "SOL-001"),
+            ]
+            for isbn, barcode in copy_specs:
+                book = books_by_isbn.get(isbn)
+                if book is not None:
+                    session.add(BookCopy(book_id=book.id, barcode=barcode))
+                    copies_added += 1
+            await session.commit()
+            print(f"Seeded {copies_added} book copies.")
+
+        if (await session.exec(select(Loan).limit(1))).first() is not None:
+            print("Database already contains loans — skipping loan seed.")
+        else:
+            now = _utcnow()
+
+            # Look up members and copies by known values.
+            ada = (
+                await session.exec(select(Member).where(Member.email == "ada.lovelace@example.com"))
+            ).first()
+            alan = (
+                await session.exec(select(Member).where(Member.email == "alan.turing@example.com"))
+            ).first()
+            grace = (
+                await session.exec(select(Member).where(Member.email == "grace.hopper@example.com"))
+            ).first()
+
+            copy_dq1 = (
+                await session.exec(select(BookCopy).where(BookCopy.barcode == "DQ-001"))
+            ).first()
+            copy_ohy1 = (
+                await session.exec(select(BookCopy).where(BookCopy.barcode == "OHY-001"))
+            ).first()
+            copy_cp1 = (
+                await session.exec(select(BookCopy).where(BookCopy.barcode == "CP-001"))
+            ).first()
+
+            loans_added = 0
+            if ada and copy_dq1:
+                # Active loan: due in future
+                session.add(
+                    Loan(
+                        member_id=ada.id,
+                        book_copy_id=copy_dq1.id,
+                        due_date=now + timedelta(days=10),
+                    )
+                )
+                loans_added += 1
+            if alan and copy_ohy1:
+                # Overdue loan: due in the past, not returned
+                session.add(
+                    Loan(
+                        member_id=alan.id,
+                        book_copy_id=copy_ohy1.id,
+                        due_date=now - timedelta(days=5),
+                    )
+                )
+                loans_added += 1
+            if grace and copy_cp1:
+                # Returned loan
+                returned_loan = Loan(
+                    member_id=grace.id,
+                    book_copy_id=copy_cp1.id,
+                    due_date=now - timedelta(days=20),
+                    returned_at=now - timedelta(days=3),
+                )
+                session.add(returned_loan)
+                loans_added += 1
+            await session.commit()
+            print(f"Seeded {loans_added} loans.")
 
 
 if __name__ == "__main__":
