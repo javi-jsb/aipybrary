@@ -5,97 +5,15 @@ import pytest
 from app.book_copies.application.book_copy_service import BookCopyService
 from app.book_copies.domain.book_copy_exceptions import BookCopyBookNotFoundError
 from app.book_copies.domain.book_copy_model import (
-    BookCopy,
     BookCopyCreate,
     BookCopyUpdate,
     SortBy,
     SortOrder,
 )
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
-from app.books.domain.book_model import Book, BookCreate, BookUpdate
-from app.books.domain.book_model import SortBy as BookSortBy
-from app.books.domain.book_model import SortOrder as BookSortOrder
-from app.books.domain.book_repository import BookRepository, BookWithCounts
-
-
-class FakeBookRepository(BookRepository):
-    def __init__(self) -> None:
-        self._books: dict[uuid.UUID, Book] = {}
-
-    def add(self, book: Book) -> None:
-        self._books[book.id] = book
-
-    async def create(self, data: BookCreate) -> Book:
-        book = Book.model_validate(data)
-        self._books[book.id] = book
-        return book
-
-    async def get_by_id(self, book_id: uuid.UUID) -> BookWithCounts | None:
-        book = self._books.get(book_id)
-        if book is None:
-            return None
-        return BookWithCounts(book, 0, 0)
-
-    async def get_filtered(
-        self,
-        title: str | None,
-        author: str | None,
-        sort_by: BookSortBy,
-        order: BookSortOrder,
-        page: int,
-        size: int,
-    ) -> tuple[list[BookWithCounts], int]:  # pragma: no cover - not exercised here
-        return [], 0
-
-    async def update(self, book: Book, data: BookUpdate) -> BookWithCounts:  # pragma: no cover - not exercised here
-        return BookWithCounts(book, 0, 0)
-
-    async def delete(self, book: Book) -> None:  # pragma: no cover - not exercised here
-        self._books.pop(book.id, None)
-
-
-class FakeBookCopyRepository(BookCopyRepository):
-    def __init__(self) -> None:
-        self._copies: dict[uuid.UUID, BookCopy] = {}
-
-    async def create(self, data: BookCopyCreate) -> BookCopy:
-        copy = BookCopy.model_validate(data)
-        self._copies[copy.id] = copy
-        return copy
-
-    async def get_by_id(self, copy_id: uuid.UUID) -> BookCopy | None:
-        return self._copies.get(copy_id)
-
-    async def get_filtered(
-        self,
-        book_id: uuid.UUID | None,
-        barcode: str | None,
-        location: str | None,
-        sort_by: SortBy,
-        order: SortOrder,
-        page: int,
-        size: int,
-    ) -> tuple[list[BookCopy], int]:
-        items = list(self._copies.values())
-        if book_id is not None:
-            items = [c for c in items if c.book_id == book_id]
-        if barcode:
-            items = [c for c in items if barcode.lower() in c.barcode.lower()]
-        if location:
-            items = [c for c in items if c.location and location.lower() in c.location.lower()]
-        total = len(items)
-        offset = (page - 1) * size
-        return items[offset : offset + size], total
-
-    async def update(self, copy: BookCopy, data: BookCopyUpdate) -> BookCopy:
-        copy.sqlmodel_update(data.model_dump(exclude_unset=True))
-        return copy
-
-    async def delete(self, copy: BookCopy) -> None:
-        self._copies.pop(copy.id, None)
-
-    async def count_by_book_id(self, book_id: uuid.UUID) -> int:
-        return sum(1 for c in self._copies.values() if c.book_id == book_id)
+from app.books.domain.book_model import Book
+from tests.fakes.book_copy_fakes import FakeBookCopyRepository
+from tests.fakes.book_fakes import FakeBookRepository
 
 
 def _make_service() -> tuple[BookCopyService, FakeBookCopyRepository, FakeBookRepository]:

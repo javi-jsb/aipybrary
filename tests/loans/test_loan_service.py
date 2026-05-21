@@ -3,8 +3,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from app.book_copies.domain.book_copy_model import BookCopy, BookCopyCreate
-from app.book_copies.domain.book_copy_repository import BookCopyRepository
+from app.book_copies.domain.book_copy_model import BookCopy
 from app.loans.application.loan_service import LoanService
 from app.loans.domain.loan_exceptions import (
     BookCopyNotAvailableError,
@@ -18,118 +17,18 @@ from app.loans.domain.loan_exceptions import (
 )
 from app.loans.domain.loan_model import (
     Loan,
-    LoanCreate,
+    LoanStatus,
+    SortBy,
+    SortOrder,
 )
-from app.loans.domain.loan_repository import LoanRepository
-from app.members.domain.member_model import Member, MemberCreate, MemberStatus
-from app.members.domain.member_repository import MemberRepository
+from app.members.domain.member_model import Member, MemberStatus
+from tests.fakes.book_copy_fakes import FakeBookCopyRepository
+from tests.fakes.loan_fakes import FakeLoanRepository
+from tests.fakes.member_fakes import FakeMemberRepository
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
-
-
-# ---------------------------------------------------------------------------
-# Fake repositories
-# ---------------------------------------------------------------------------
-
-
-class FakeMemberRepository(MemberRepository):
-    def __init__(self) -> None:
-        self._members: dict[uuid.UUID, Member] = {}
-
-    def add(self, member: Member) -> None:
-        self._members[member.id] = member
-
-    async def create(self, data: MemberCreate) -> Member:  # pragma: no cover
-        member = Member.model_validate(data)
-        self._members[member.id] = member
-        return member
-
-    async def get_by_id(self, member_id: uuid.UUID) -> Member | None:
-        return self._members.get(member_id)
-
-    async def get_filtered(self, full_name, email, status, sort_by, order, page, size):  # pragma: no cover
-        return [], 0
-
-    async def update(self, member, data):  # pragma: no cover
-        return member
-
-    async def delete(self, member):  # pragma: no cover
-        self._members.pop(member.id, None)
-
-
-class FakeBookCopyRepository(BookCopyRepository):
-    def __init__(self) -> None:
-        self._copies: dict[uuid.UUID, BookCopy] = {}
-
-    def add(self, copy: BookCopy) -> None:
-        self._copies[copy.id] = copy
-
-    async def create(self, data: BookCopyCreate) -> BookCopy:  # pragma: no cover
-        copy = BookCopy.model_validate(data)
-        self._copies[copy.id] = copy
-        return copy
-
-    async def get_by_id(self, copy_id: uuid.UUID) -> BookCopy | None:
-        return self._copies.get(copy_id)
-
-    async def get_filtered(self, book_id, barcode, location, sort_by, order, page, size):  # pragma: no cover
-        return [], 0
-
-    async def update(self, copy, data):  # pragma: no cover
-        return copy
-
-    async def delete(self, copy):  # pragma: no cover
-        self._copies.pop(copy.id, None)
-
-    async def count_by_book_id(self, book_id):  # pragma: no cover
-        return 0
-
-
-class FakeLoanRepository(LoanRepository):
-    def __init__(self) -> None:
-        self._loans: dict[uuid.UUID, Loan] = {}
-        self._active_count: dict[uuid.UUID, int] = {}
-
-    def add(self, loan: Loan) -> None:
-        self._loans[loan.id] = loan
-
-    async def create(self, data: LoanCreate, due_date: datetime) -> Loan:
-        loan = Loan(member_id=data.member_id, book_copy_id=data.book_copy_id, due_date=due_date)
-        self._loans[loan.id] = loan
-        return loan
-
-    async def get_by_id(self, loan_id: uuid.UUID) -> Loan | None:
-        return self._loans.get(loan_id)
-
-    async def get_filtered(self, member_id, book_copy_id, status, sort_by, order, page, size):  # pragma: no cover
-        return [], 0
-
-    async def mark_returned(self, loan: Loan) -> Loan:
-        loan.returned_at = _utcnow()
-        loan.updated_at = _utcnow()
-        return loan
-
-    async def undo_return(self, loan: Loan) -> Loan:
-        loan.returned_at = None
-        loan.updated_at = _utcnow()
-        return loan
-
-    async def delete(self, loan: Loan) -> None:
-        self._loans.pop(loan.id, None)
-
-    async def count_active_for_member(self, member_id: uuid.UUID) -> int:
-        return self._active_count.get(member_id, 0)
-
-    async def get_active_for_copy(self, book_copy_id: uuid.UUID) -> Loan | None:
-        for loan in self._loans.values():
-            if loan.book_copy_id == book_copy_id and loan.returned_at is None:
-                return loan
-        return None
-
-    def set_active_count(self, member_id: uuid.UUID, count: int) -> None:
-        self._active_count[member_id] = count
 
 
 def _make_service() -> tuple[LoanService, FakeLoanRepository, FakeMemberRepository, FakeBookCopyRepository]:
@@ -297,3 +196,48 @@ async def test_cancel_success() -> None:
     result = await service.cancel(loan.id)
     assert result is True
     assert await service.get_by_id(loan.id) is None
+
+
+# ---------------------------------------------------------------------------
+# get_filtered()
+# ---------------------------------------------------------------------------
+
+
+async def test_get_filtered_empty() -> None:
+    service, _, _, _ = _make_service()
+    result = await service.get_filtered(None, None, None, SortBy.created_at, SortOrder.desc, 1, 20)
+    assert result.items == []
+    assert result.total == 0
+    assert result.pages == 0
+
+
+async def test_get_filtered_by_member() -> None:
+    service, loan_repo, member_repo, copy_repo = _make_service()
+    member = _active_member()
+    member_repo.add(member)
+    copy = _copy()
+    copy_repo.add(copy)
+    loan = await service.borrow(member.id, copy.id)
+    result = await service.get_filtered(member.id, None, None, SortBy.created_at, SortOrder.asc, 1, 20)
+    assert result.total == 1
+    assert result.items[0].id == loan.id
+
+
+async def test_get_filtered_by_status() -> None:
+    service, loan_repo, _, _ = _make_service()
+    active_loan = Loan(
+        member_id=uuid.uuid4(),
+        book_copy_id=uuid.uuid4(),
+        due_date=_utcnow() + timedelta(days=5),
+    )
+    returned_loan = Loan(
+        member_id=uuid.uuid4(),
+        book_copy_id=uuid.uuid4(),
+        due_date=_utcnow(),
+        returned_at=_utcnow(),
+    )
+    loan_repo.add(active_loan)
+    loan_repo.add(returned_loan)
+    result = await service.get_filtered(None, None, LoanStatus.returned, SortBy.created_at, SortOrder.desc, 1, 20)
+    assert result.total == 1
+    assert result.items[0].id == returned_loan.id
