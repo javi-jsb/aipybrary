@@ -15,7 +15,7 @@ from app.book_copies.domain.book_copy_repository import BookCopyRepository
 from app.books.domain.book_model import Book, BookCreate, BookUpdate
 from app.books.domain.book_model import SortBy as BookSortBy
 from app.books.domain.book_model import SortOrder as BookSortOrder
-from app.books.domain.book_repository import BookRepository
+from app.books.domain.book_repository import BookRepository, BookWithCounts
 
 
 class FakeBookRepository(BookRepository):
@@ -30,11 +30,11 @@ class FakeBookRepository(BookRepository):
         self._books[book.id] = book
         return book
 
-    async def get_by_id(self, book_id: uuid.UUID) -> tuple[Book, int] | None:
+    async def get_by_id(self, book_id: uuid.UUID) -> BookWithCounts | None:
         book = self._books.get(book_id)
         if book is None:
             return None
-        return book, 0
+        return BookWithCounts(book, 0, 0)
 
     async def get_filtered(
         self,
@@ -44,13 +44,11 @@ class FakeBookRepository(BookRepository):
         order: BookSortOrder,
         page: int,
         size: int,
-    ) -> tuple[list[tuple[Book, int]], int]:  # pragma: no cover - not exercised here
+    ) -> tuple[list[BookWithCounts], int]:  # pragma: no cover - not exercised here
         return [], 0
 
-    async def update(
-        self, book: Book, data: BookUpdate
-    ) -> tuple[Book, int]:  # pragma: no cover - not exercised here
-        return book, 0
+    async def update(self, book: Book, data: BookUpdate) -> BookWithCounts:  # pragma: no cover - not exercised here
+        return BookWithCounts(book, 0, 0)
 
     async def delete(self, book: Book) -> None:  # pragma: no cover - not exercised here
         self._books.pop(book.id, None)
@@ -150,9 +148,7 @@ async def test_get_filtered_pagination_and_filters() -> None:
     book_repo.add(book)
     for i in range(5):
         await service.create(BookCopyCreate(book_id=book.id, barcode=f"BC-{i}"))
-    result = await service.get_filtered(
-        book.id, None, None, SortBy.created_at, SortOrder.desc, 1, 3
-    )
+    result = await service.get_filtered(book.id, None, None, SortBy.created_at, SortOrder.desc, 1, 3)
     assert len(result.items) == 3
     assert result.total == 5
     assert result.pages == 2
