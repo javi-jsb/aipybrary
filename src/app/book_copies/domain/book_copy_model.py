@@ -5,7 +5,7 @@ from math import ceil
 
 import uuid_utils
 from pydantic import computed_field
-from sqlalchemy import Text, UniqueConstraint, text
+from sqlalchemy import Column, ForeignKey, Text, UniqueConstraint, Uuid, text
 from sqlmodel import Field, SQLModel
 
 
@@ -40,7 +40,14 @@ class BookCopy(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("barcode", name=BARCODE_CONSTRAINT),)
 
     id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
-    book_id: uuid.UUID = Field(foreign_key="books.id")
+    book_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid(),
+            ForeignKey("books.id", ondelete="RESTRICT", name=BOOK_FK_CONSTRAINT),
+            nullable=False,
+            index=True,
+        )
+    )
     barcode: str = Field(max_length=100)
     location: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, sa_type=Text())
