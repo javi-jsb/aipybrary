@@ -16,6 +16,7 @@ from app.books.domain.book_model import (
     SortOrder,
 )
 from app.books.domain.book_repository import BookRepository, BookWithCounts
+from app.core.db import is_constraint_violated
 from app.loans.domain.loan_model import Loan
 
 _copies_total_sq = (
@@ -35,16 +36,6 @@ _copies_available_sq = (
 )
 
 
-def _is_isbn_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the isbn unique index."""
-    return exc.orig is not None and ISBN_CONSTRAINT in str(exc.orig)
-
-
-def _is_book_copies_fk_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the book_copies → books FK."""
-    return exc.orig is not None and BOOK_FK_CONSTRAINT in str(exc.orig)
-
-
 class SqlModelBookRepository(BookRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -56,7 +47,7 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_isbn_conflict(exc):
+            if is_constraint_violated(exc, ISBN_CONSTRAINT):
                 raise DuplicateIsbnError from exc
             raise
         await self._session.refresh(book)
@@ -107,7 +98,7 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_isbn_conflict(exc):
+            if is_constraint_violated(exc, ISBN_CONSTRAINT):
                 raise DuplicateIsbnError from exc
             raise
         await self._session.refresh(book)
@@ -122,6 +113,6 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_book_copies_fk_conflict(exc):
+            if is_constraint_violated(exc, BOOK_FK_CONSTRAINT):
                 raise BookHasCopiesError from exc
             raise
