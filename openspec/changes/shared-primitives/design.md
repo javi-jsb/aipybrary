@@ -42,9 +42,9 @@ The base class must NOT be `table=True`. Entities inherit with `class Book(Entit
 
 `BookListResponse = PaginatedResponse[BookPublic]` (alias) would cause FastAPI to emit `PaginatedResponse_BookPublic_` in the OpenAPI schema component name. Using a named subclass `class BookListResponse(PaginatedResponse[BookPublic]): pass` preserves the original component name in the OpenAPI spec, keeping the API contract unchanged for any client reading the schema.
 
-### D3 — `constraint_violated()` utility in `core/db.py` (over app-level IntegrityError handler)
+### D3 — `is_constraint_violated()` utility in `core/db.py` (over app-level IntegrityError handler)
 
-The broader option was a global `IntegrityError → 409` FastAPI exception handler. Chose the narrower utility function because: it preserves the per-slice domain exception hierarchy (`DuplicateEmailError`, `DuplicateIsbnError`, etc.), avoids coupling the handler to all constraint names app-wide, and the change is minimal — just deleting private functions and inlining the call.
+The broader option was a global `IntegrityError → 409` FastAPI exception handler. Chose the narrower utility function because: it preserves the per-slice domain exception hierarchy (`DuplicateEmailError`, `DuplicateIsbnError`, etc.), avoids coupling the handler to all constraint names app-wide, and the change is minimal — just deleting private functions and inlining the call. The `is_` prefix was added for clarity as a predicate function.
 
 ### D4 — `tests/fakes/` separate module (over `conftest.py`)
 

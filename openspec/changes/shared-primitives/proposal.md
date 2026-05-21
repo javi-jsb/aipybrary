@@ -7,11 +7,11 @@ With 4 implemented slices (`books`, `members`, `book_copies`, `loans`), a set of
 - **New `src/app/core/` module** with:
   - `entity.py` — `_uuid7()`, `_utcnow()`, and `Entity` base class (`id` + `created_at` + `updated_at`)
   - `sorting.py` — shared `SortOrder(StrEnum)` enum
-  - `db.py` — `constraint_violated(exc, constraint_name)` utility for named-constraint IntegrityError checks
+  - `db.py` — `is_constraint_violated(exc, constraint_name)` utility for named-constraint IntegrityError checks
   - `pagination.py` — `PaginatedResponse[T]` generic base with `pages` computed field
 - **All 4 domain entity classes** (`Book`, `Member`, `BookCopy`, `Loan`) updated to inherit from `Entity` instead of declaring `id`/`created_at`/`updated_at` directly
-- **All 4 domain model files** updated to import `SortOrder` from `core.sorting` and drop their local definitions
-- **All 4 SQL repositories** updated to use `constraint_violated()` from `core.db` and drop their private `_is_xxx_conflict()` helpers
+- **All 4 domain model files** drop their local `SortOrder` definitions; all consumers (routers, repositories, fakes, tests) import `SortOrder` directly from `app.core.sorting`
+- **All 4 SQL repositories** updated to use `is_constraint_violated()` from `core.db` and drop their private `_is_xxx_conflict()` helpers
 - **All 4 `XxxListResponse` classes** updated to subclass `PaginatedResponse[XxxPublic]` (empty body, preserving concrete class names for OpenAPI)
 - **New `tests/fakes/` module** with canonical in-memory fake repository implementations, shared across service tests and cross-slice tests
 - **`alembic/env.py`** — add missing `app.loans.domain.loan_model` import (bug fix discovered during this work, tracked in #42)
