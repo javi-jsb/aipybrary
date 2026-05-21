@@ -14,11 +14,7 @@ def _alembic_config() -> Config:
 
 def _isbn_constraint_names(sync_conn: sa.Connection) -> set[str | None]:
     insp = sa.inspect(sync_conn)
-    return {
-        u["name"]
-        for u in insp.get_unique_constraints("books")
-        if tuple(u["column_names"]) == ("isbn",)
-    }
+    return {u["name"] for u in insp.get_unique_constraints("books") if tuple(u["column_names"]) == ("isbn",)}
 
 
 async def test_books_isbn_constraint_is_named() -> None:

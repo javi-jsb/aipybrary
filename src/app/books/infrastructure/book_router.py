@@ -12,9 +12,9 @@ from app.books.domain.book_model import (
     BookPublic,
     BookUpdate,
     SortBy,
-    SortOrder,
 )
 from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
+from app.core.sorting import SortOrder
 from app.database import get_session
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -56,9 +56,7 @@ async def create_book(data: BookCreate, service: ServiceDep) -> BookPublic:
     try:
         return await service.create(data)
     except DuplicateIsbnError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL) from None
 
 
 @router.patch("/{book_id}", response_model=BookPublic)
@@ -66,9 +64,7 @@ async def update_book(book_id: uuid.UUID, data: BookUpdate, service: ServiceDep)
     try:
         book = await service.update(book_id, data)
     except DuplicateIsbnError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_ISBN_DETAIL) from None
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
     return book
@@ -79,8 +75,6 @@ async def delete_book(book_id: uuid.UUID, service: ServiceDep) -> None:
     try:
         deleted = await service.delete(book_id)
     except BookHasCopiesError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_HAS_COPIES_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_HAS_COPIES_DETAIL) from None
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")

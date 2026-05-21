@@ -13,22 +13,18 @@ from app.books.domain.book_model import (
     BookCreate,
     BookUpdate,
     SortBy,
-    SortOrder,
 )
 from app.books.domain.book_repository import BookRepository, BookWithCounts
+from app.core.db import is_constraint_violated
+from app.core.sorting import SortOrder
 from app.loans.domain.loan_model import Loan
 
 _copies_total_sq = (
-    select(func.count(col(BookCopy.id)))
-    .where(col(BookCopy.book_id) == col(Book.id))
-    .correlate(Book)
-    .scalar_subquery()
+    select(func.count(col(BookCopy.id))).where(col(BookCopy.book_id) == col(Book.id)).correlate(Book).scalar_subquery()
 )
 
 _active_loan_for_copy = (
-    select(literal(1))
-    .where(col(Loan.book_copy_id) == col(BookCopy.id))
-    .where(col(Loan.returned_at).is_(None))
+    select(literal(1)).where(col(Loan.book_copy_id) == col(BookCopy.id)).where(col(Loan.returned_at).is_(None))
 )
 
 _copies_available_sq = (
@@ -38,16 +34,6 @@ _copies_available_sq = (
     .correlate(Book)
     .scalar_subquery()
 )
-
-
-def _is_isbn_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the isbn unique index."""
-    return exc.orig is not None and ISBN_CONSTRAINT in str(exc.orig)
-
-
-def _is_book_copies_fk_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the book_copies → books FK."""
-    return exc.orig is not None and BOOK_FK_CONSTRAINT in str(exc.orig)
 
 
 class SqlModelBookRepository(BookRepository):
@@ -61,7 +47,7 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_isbn_conflict(exc):
+            if is_constraint_violated(exc, ISBN_CONSTRAINT):
                 raise DuplicateIsbnError from exc
             raise
         await self._session.refresh(book)
@@ -112,7 +98,7 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_isbn_conflict(exc):
+            if is_constraint_violated(exc, ISBN_CONSTRAINT):
                 raise DuplicateIsbnError from exc
             raise
         await self._session.refresh(book)
@@ -127,6 +113,6 @@ class SqlModelBookRepository(BookRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_book_copies_fk_conflict(exc):
+            if is_constraint_violated(exc, BOOK_FK_CONSTRAINT):
                 raise BookHasCopiesError from exc
             raise

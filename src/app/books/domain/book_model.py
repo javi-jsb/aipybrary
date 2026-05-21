@@ -1,20 +1,13 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import StrEnum
-from math import ceil
 
-import uuid_utils
-from pydantic import computed_field, field_validator
-from sqlalchemy import Text, UniqueConstraint, text
+from pydantic import field_validator
+from sqlalchemy import Text, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
-
-def _uuid7() -> uuid.UUID:
-    return uuid.UUID(bytes=uuid_utils.uuid7().bytes)
-
-
-def _utcnow() -> datetime:
-    return datetime.now(UTC).replace(tzinfo=None)
+from app.core.entity import Entity
+from app.core.pagination import PaginatedResponse
 
 
 class SortBy(StrEnum):
@@ -22,11 +15,6 @@ class SortBy(StrEnum):
     author = "author"
     publication_year = "publication_year"
     created_at = "created_at"
-
-
-class SortOrder(StrEnum):
-    asc = "asc"
-    desc = "desc"
 
 
 def _validate_isbn(v: str | None) -> str | None:
@@ -54,24 +42,15 @@ def _validate_isbn(v: str | None) -> str | None:
 ISBN_CONSTRAINT = "uq_books_isbn"
 
 
-class Book(SQLModel, table=True):
+class Book(Entity, table=True):
     __tablename__ = "books"
     __table_args__ = (UniqueConstraint("isbn", name=ISBN_CONSTRAINT),)
 
-    id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
     title: str = Field(max_length=500)
     author: str = Field(max_length=300)
     isbn: str | None = Field(default=None, max_length=13)
     publication_year: int | None = None
     synopsis: str | None = Field(default=None, sa_type=Text())
-    created_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()")},
-    )
-    updated_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()"), "onupdate": _utcnow},
-    )
 
 
 class BookCreate(SQLModel):
@@ -113,13 +92,5 @@ class BookPublic(SQLModel):
     updated_at: datetime
 
 
-class BookListResponse(SQLModel):
-    items: list[BookPublic]
-    total: int
-    page: int
-    size: int
-
-    @computed_field
-    @property
-    def pages(self) -> int:
-        return ceil(self.total / self.size) if self.total > 0 else 0
+class BookListResponse(PaginatedResponse[BookPublic]):
+    pass

@@ -1,13 +1,13 @@
 import uuid
 from abc import ABC, abstractmethod
 
+from app.core.sorting import SortOrder
 from app.members.domain.member_model import (
     Member,
     MemberCreate,
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 
 

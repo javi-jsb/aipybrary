@@ -2,7 +2,8 @@ import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from app.loans.domain.loan_model import Loan, LoanCreate, LoanStatus, SortBy, SortOrder
+from app.core.sorting import SortOrder
+from app.loans.domain.loan_model import Loan, LoanCreate, LoanStatus, SortBy
 
 
 class LoanRepository(ABC):

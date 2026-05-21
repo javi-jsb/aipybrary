@@ -14,9 +14,7 @@ from app.book_copies.domain.book_copy_exceptions import DuplicateBarcodeError
 from app.book_copies.domain.book_copy_model import BookCopy, BookCopyCreate, BookCopyUpdate
 from app.book_copies.infrastructure.sql_book_copy_repository import SqlModelBookCopyRepository
 
-_BARCODE_VIOLATION = Exception(
-    'duplicate key value violates unique constraint "uq_book_copies_barcode"'
-)
+_BARCODE_VIOLATION = Exception('duplicate key value violates unique constraint "uq_book_copies_barcode"')
 _OTHER_VIOLATION = Exception('null value in column "barcode" violates not-null constraint')
 
 

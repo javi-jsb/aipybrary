@@ -5,6 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.db import is_constraint_violated
+from app.core.sorting import SortOrder
 from app.members.domain.member_exceptions import DuplicateEmailError
 from app.members.domain.member_model import (
     EMAIL_CONSTRAINT,
@@ -13,18 +15,8 @@ from app.members.domain.member_model import (
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.domain.member_repository import MemberRepository
-
-
-def _is_email_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the email unique index.
-
-    Any other IntegrityError (e.g. a NOT NULL violation) is left to propagate
-    untouched rather than being mislabelled as a duplicate-email 409.
-    """
-    return exc.orig is not None and EMAIL_CONSTRAINT in str(exc.orig)
 
 
 class SqlModelMemberRepository(MemberRepository):
@@ -38,7 +30,7 @@ class SqlModelMemberRepository(MemberRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_email_conflict(exc):
+            if is_constraint_violated(exc, EMAIL_CONSTRAINT):
                 raise DuplicateEmailError from exc
             raise
         await self._session.refresh(member)
@@ -87,7 +79,7 @@ class SqlModelMemberRepository(MemberRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_email_conflict(exc):
+            if is_constraint_violated(exc, EMAIL_CONSTRAINT):
                 raise DuplicateEmailError from exc
             raise
         await self._session.refresh(member)

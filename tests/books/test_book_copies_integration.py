@@ -106,9 +106,7 @@ async def test_list_books_query_count_is_bounded(client: AsyncClient) -> None:
     def _record(_conn, _cursor, statement, _params, _context, _executemany):  # type: ignore[no-untyped-def]
         statements.append(statement)
 
-    tracing_session_maker = async_sessionmaker(
-        tracing_engine, class_=AsyncSession, expire_on_commit=False
-    )
+    tracing_session_maker = async_sessionmaker(tracing_engine, class_=AsyncSession, expire_on_commit=False)
 
     from app.database import get_session
     from app.main import app
@@ -131,9 +129,7 @@ async def test_list_books_query_count_is_bounded(client: AsyncClient) -> None:
         await tracing_engine.dispose()
 
     select_counts = Counter(
-        "books" if "FROM books" in stmt else "other"
-        for stmt in statements
-        if stmt.strip().upper().startswith("SELECT")
+        "books" if "FROM books" in stmt else "other" for stmt in statements if stmt.strip().upper().startswith("SELECT")
     )
     # Two SELECTs: one for the count, one for the paginated rows with the
     # aggregated copy count. Neither must repeat per row.

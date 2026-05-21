@@ -57,9 +57,7 @@ async def test_create_book_copy_missing_required_fields(client: AsyncClient) -> 
 
 
 async def test_create_book_copy_nonexistent_book(client: AsyncClient) -> None:
-    response = await client.post(
-        "/book-copies", json={"book_id": str(uuid.uuid4()), "barcode": "ABC"}
-    )
+    response = await client.post("/book-copies", json={"book_id": str(uuid.uuid4()), "barcode": "ABC"})
     assert response.status_code == 422
 
 
@@ -274,9 +272,7 @@ async def test_update_book_copy_duplicate_barcode(client: AsyncClient) -> None:
     first = await _create_copy(client, book["id"], barcode="FIRST-BC")
     second = await _create_copy(client, book["id"], barcode="SECOND-BC")
 
-    response = await client.patch(
-        f"/book-copies/{second['id']}", json={"barcode": first["barcode"]}
-    )
+    response = await client.patch(f"/book-copies/{second['id']}", json={"barcode": first["barcode"]})
     assert response.status_code == 409
 
 

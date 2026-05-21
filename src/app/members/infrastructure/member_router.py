@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.sorting import SortOrder
 from app.database import get_session
 from app.members.application.member_service import MemberService
 from app.members.domain.member_exceptions import DuplicateEmailError
@@ -14,7 +15,6 @@ from app.members.domain.member_model import (
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository
 
@@ -57,22 +57,16 @@ async def create_member(data: MemberCreate, service: ServiceDep) -> MemberPublic
     try:
         member = await service.create(data)
     except DuplicateEmailError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL) from None
     return MemberPublic.model_validate(member)
 
 
 @router.patch("/{member_id}", response_model=MemberPublic)
-async def update_member(
-    member_id: uuid.UUID, data: MemberUpdate, service: ServiceDep
-) -> MemberPublic:
+async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: ServiceDep) -> MemberPublic:
     try:
         member = await service.update(member_id, data)
     except DuplicateEmailError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL) from None
     if member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     return MemberPublic.model_validate(member)

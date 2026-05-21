@@ -1,20 +1,13 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import StrEnum
-from math import ceil
 
-import uuid_utils
 from pydantic import computed_field
-from sqlalchemy import Column, ForeignKey, Uuid, text
+from sqlalchemy import Column, ForeignKey, Uuid
 from sqlmodel import Field, SQLModel
 
-
-def _uuid7() -> uuid.UUID:
-    return uuid.UUID(bytes=uuid_utils.uuid7().bytes)
-
-
-def _utcnow() -> datetime:
-    return datetime.now(UTC).replace(tzinfo=None)
+from app.core.entity import Entity, _utcnow
+from app.core.pagination import PaginatedResponse
 
 
 class LoanStatus(StrEnum):
@@ -29,15 +22,9 @@ class SortBy(StrEnum):
     returned_at = "returned_at"
 
 
-class SortOrder(StrEnum):
-    asc = "asc"
-    desc = "desc"
-
-
-class Loan(SQLModel, table=True):
+class Loan(Entity, table=True):
     __tablename__ = "loans"
 
-    id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
     member_id: uuid.UUID = Field(
         sa_column=Column(
             Uuid(),
@@ -56,14 +43,6 @@ class Loan(SQLModel, table=True):
     )
     due_date: datetime
     returned_at: datetime | None = Field(default=None)
-    created_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()")},
-    )
-    updated_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()"), "onupdate": _utcnow},
-    )
 
 
 class LoanCreate(SQLModel):
@@ -90,13 +69,5 @@ class LoanPublic(SQLModel):
         return LoanStatus.active
 
 
-class LoanListResponse(SQLModel):
-    items: list[LoanPublic]
-    total: int
-    page: int
-    size: int
-
-    @computed_field
-    @property
-    def pages(self) -> int:
-        return ceil(self.total / self.size) if self.total > 0 else 0
+class LoanListResponse(PaginatedResponse[LoanPublic]):
+    pass

@@ -24,9 +24,7 @@ async def _create_member(client: AsyncClient, **kwargs: object) -> dict:
 
 
 async def test_create_member(client: AsyncClient) -> None:
-    response = await client.post(
-        "/members", json={"full_name": "Ada Lovelace", "email": "ada@example.com"}
-    )
+    response = await client.post("/members", json={"full_name": "Ada Lovelace", "email": "ada@example.com"})
     assert response.status_code == 201
     data = response.json()
     assert data["full_name"] == "Ada Lovelace"
@@ -61,9 +59,7 @@ async def test_create_member_invalid_status(client: AsyncClient) -> None:
 
 async def test_create_member_duplicate_email(client: AsyncClient) -> None:
     await _create_member(client, email="dup@example.com")
-    response = await client.post(
-        "/members", json={"full_name": "Other", "email": "dup@example.com"}
-    )
+    response = await client.post("/members", json={"full_name": "Other", "email": "dup@example.com"})
     assert response.status_code == 409
 
 
@@ -73,18 +69,14 @@ async def test_create_member_invalid_email(client: AsyncClient) -> None:
 
 
 async def test_create_member_normalizes_email(client: AsyncClient) -> None:
-    response = await client.post(
-        "/members", json={"full_name": "Ada", "email": "  Ada@Example.COM  "}
-    )
+    response = await client.post("/members", json={"full_name": "Ada", "email": "  Ada@Example.COM  "})
     assert response.status_code == 201
     assert response.json()["email"] == "ada@example.com"
 
 
 async def test_create_member_duplicate_email_is_case_insensitive(client: AsyncClient) -> None:
     await _create_member(client, email="case@example.com")
-    response = await client.post(
-        "/members", json={"full_name": "Other", "email": "CASE@example.com"}
-    )
+    response = await client.post("/members", json={"full_name": "Other", "email": "CASE@example.com"})
     assert response.status_code == 409
 
 

@@ -12,19 +12,10 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyCreate,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
-
-
-def _is_barcode_conflict(exc: IntegrityError) -> bool:
-    """True only when the violated constraint is the barcode unique index.
-
-    Any other IntegrityError (e.g. a NOT NULL violation or an FK violation) is
-    left to propagate untouched rather than being mislabelled as a duplicate
-    barcode 409.
-    """
-    return exc.orig is not None and BARCODE_CONSTRAINT in str(exc.orig)
+from app.core.db import is_constraint_violated
+from app.core.sorting import SortOrder
 
 
 class SqlModelBookCopyRepository(BookCopyRepository):
@@ -38,7 +29,7 @@ class SqlModelBookCopyRepository(BookCopyRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_barcode_conflict(exc):
+            if is_constraint_violated(exc, BARCODE_CONSTRAINT):
                 raise DuplicateBarcodeError from exc
             raise
         await self._session.refresh(copy)
@@ -87,7 +78,7 @@ class SqlModelBookCopyRepository(BookCopyRepository):
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()
-            if _is_barcode_conflict(exc):
+            if is_constraint_violated(exc, BARCODE_CONSTRAINT):
                 raise DuplicateBarcodeError from exc
             raise
         await self._session.refresh(copy)

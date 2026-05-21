@@ -16,21 +16,21 @@ The system SHALL provide an `Entity` base class in `src/app/core/entity.py` that
 - **THEN** it does NOT inherit `id`, `created_at`, or `updated_at` from `Entity` (DTOs remain plain `SQLModel` subclasses)
 
 ### Requirement: Shared SortOrder enum in core.sorting
-The system SHALL provide a `SortOrder(StrEnum)` enum in `src/app/core/sorting.py` with values `asc` and `desc`. All slice domain model files SHALL import `SortOrder` from `app.core.sorting` and SHALL NOT define their own `SortOrder` enum.
+The system SHALL provide a `SortOrder(StrEnum)` enum in `src/app/core/sorting.py` with values `asc` and `desc`. All slice domain model files SHALL NOT define their own `SortOrder` enum. All consumers that need `SortOrder` (routers, SQL repositories, fake repositories, tests) SHALL import it directly from `app.core.sorting`.
 
 #### Scenario: SortOrder values are usable from any slice
 - **WHEN** any slice router or service references `SortOrder.asc` or `SortOrder.desc`
 - **THEN** the value resolves correctly from the shared import
 
-### Requirement: constraint_violated utility for IntegrityError checks
-The system SHALL provide a `constraint_violated(exc: IntegrityError, constraint_name: str) -> bool` function in `src/app/core/db.py`. SQL repository classes SHALL use this function instead of per-repository private `_is_xxx_conflict()` helpers.
+### Requirement: is_constraint_violated utility for IntegrityError checks
+The system SHALL provide an `is_constraint_violated(exc: IntegrityError, constraint_name: str) -> bool` function in `src/app/core/db.py`. SQL repository classes SHALL use this function instead of per-repository private `_is_xxx_conflict()` helpers.
 
 #### Scenario: Named constraint collision is detected
-- **WHEN** `constraint_violated(exc, "uq_books_isbn")` is called with an `IntegrityError` whose `orig` message contains `"uq_books_isbn"`
+- **WHEN** `is_constraint_violated(exc, "uq_books_isbn")` is called with an `IntegrityError` whose `orig` message contains `"uq_books_isbn"`
 - **THEN** the function returns `True`
 
 #### Scenario: Unrelated IntegrityError is not misidentified
-- **WHEN** `constraint_violated(exc, "uq_books_isbn")` is called with an `IntegrityError` whose `orig` message does NOT contain `"uq_books_isbn"`
+- **WHEN** `is_constraint_violated(exc, "uq_books_isbn")` is called with an `IntegrityError` whose `orig` message does NOT contain `"uq_books_isbn"`
 - **THEN** the function returns `False`
 
 ### Requirement: PaginatedResponse generic base for list envelopes

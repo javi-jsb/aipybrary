@@ -3,6 +3,8 @@ from datetime import timedelta
 
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
 from app.config import settings
+from app.core.entity import _utcnow
+from app.core.sorting import SortOrder
 from app.loans.domain.loan_exceptions import (
     BookCopyNotAvailableError,
     BookCopyNotFoundError,
@@ -20,8 +22,6 @@ from app.loans.domain.loan_model import (
     LoanPublic,
     LoanStatus,
     SortBy,
-    SortOrder,
-    _utcnow,
 )
 from app.loans.domain.loan_repository import LoanRepository
 from app.members.domain.member_model import MemberStatus
@@ -60,9 +60,7 @@ class LoanService:
             raise LoanLimitExceededError
 
         due_date = _utcnow() + timedelta(days=settings.LOAN_PERIOD_DAYS)
-        return await self._loan_repository.create(
-            LoanCreate(member_id=member_id, book_copy_id=book_copy_id), due_date
-        )
+        return await self._loan_repository.create(LoanCreate(member_id=member_id, book_copy_id=book_copy_id), due_date)
 
     async def return_loan(self, loan_id: uuid.UUID) -> Loan | None:
         loan = await self._loan_repository.get_by_id(loan_id)

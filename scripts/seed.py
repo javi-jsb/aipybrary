@@ -36,9 +36,7 @@ SAMPLE_BOOKS = [
         author="Miguel de Cervantes",
         isbn="9780060934347",
         publication_year=1605,
-        synopsis=(
-            "The adventures of an idealistic nobleman who believes himself to be a knight-errant."
-        ),
+        synopsis=("The adventures of an idealistic nobleman who believes himself to be a knight-errant."),
     ),
     BookCreate(
         title="One Hundred Years of Solitude",
@@ -65,9 +63,7 @@ SAMPLE_BOOKS = [
         author="Carlos Ruiz Zafón",
         isbn="9780143034902",
         publication_year=2001,
-        synopsis=(
-            "A boy discovers a mysterious book whose author seems to have been erased from history."
-        ),
+        synopsis=("A boy discovers a mysterious book whose author seems to have been erased from history."),
     ),
     # European literature
     BookCreate(
@@ -75,19 +71,13 @@ SAMPLE_BOOKS = [
         author="Fyodor Dostoevsky",
         isbn="9780140449136",
         publication_year=1866,
-        synopsis=(
-            "A young student commits a murder and wrestles with guilt and redemption"
-            " in St. Petersburg."
-        ),
+        synopsis=("A young student commits a murder and wrestles with guilt and redemption in St. Petersburg."),
     ),
     BookCreate(
         title="The Trial",
         author="Franz Kafka",
         publication_year=1925,
-        synopsis=(
-            "Josef K. is arrested and prosecuted by a remote, inaccessible authority"
-            " for an unstated crime."
-        ),
+        synopsis=("Josef K. is arrested and prosecuted by a remote, inaccessible authority for an unstated crime."),
     ),
     BookCreate(
         title="Middlemarch",
@@ -117,10 +107,7 @@ SAMPLE_BOOKS = [
         title="The God of Small Things",
         author="Arundhati Roy",
         publication_year=1997,
-        synopsis=(
-            "Twins in Kerala, India, whose lives are changed by the events of one day"
-            " in December 1969."
-        ),
+        synopsis=("Twins in Kerala, India, whose lives are changed by the events of one day in December 1969."),
     ),
     # North American literature
     BookCreate(
@@ -128,10 +115,7 @@ SAMPLE_BOOKS = [
         author="Toni Morrison",
         isbn="9781400033416",
         publication_year=1987,
-        synopsis=(
-            "A former enslaved woman is haunted by the ghost of her dead daughter"
-            " in post-Civil War Ohio."
-        ),
+        synopsis=("A former enslaved woman is haunted by the ghost of her dead daughter in post-Civil War Ohio."),
     ),
     BookCreate(
         title="Blood Meridian",
@@ -143,10 +127,7 @@ SAMPLE_BOOKS = [
         author="Ursula K. Le Guin",
         isbn="9780441478125",
         publication_year=1969,
-        synopsis=(
-            "An envoy from an interplanetary league visits a world whose inhabitants"
-            " have no fixed gender."
-        ),
+        synopsis=("An envoy from an interplanetary league visits a world whose inhabitants have no fixed gender."),
     ),
     # African literature
     BookCreate(
@@ -159,9 +140,7 @@ SAMPLE_BOOKS = [
     BookCreate(
         title="So Long a Letter",
         author="Mariama Bâ",
-        synopsis=(
-            "An epistolary novel about two Senegalese women coping with polygamy and its aftermath."
-        ),
+        synopsis=("An epistolary novel about two Senegalese women coping with polygamy and its aftermath."),
     ),
     # Science fiction / fantasy
     BookCreate(
@@ -170,8 +149,7 @@ SAMPLE_BOOKS = [
         isbn="9780156837507",
         publication_year=1961,
         synopsis=(
-            "Scientists on a space station struggle to communicate with the oceanic"
-            " alien intelligence of Solaris."
+            "Scientists on a space station struggle to communicate with the oceanic alien intelligence of Solaris."
         ),
     ),
     BookCreate(
@@ -184,10 +162,7 @@ SAMPLE_BOOKS = [
     BookCreate(
         title="Pedro Páramo",
         author="Juan Rulfo",
-        synopsis=(
-            "A man travels to a ghost town in Mexico searching for his father"
-            " and encounters the dead."
-        ),
+        synopsis=("A man travels to a ghost town in Mexico searching for his father and encounters the dead."),
     ),
 ]
 
@@ -276,25 +251,13 @@ async def seed() -> None:
             now = _utcnow()
 
             # Look up members and copies by known values.
-            ada = (
-                await session.exec(select(Member).where(Member.email == "ada.lovelace@example.com"))
-            ).first()
-            alan = (
-                await session.exec(select(Member).where(Member.email == "alan.turing@example.com"))
-            ).first()
-            grace = (
-                await session.exec(select(Member).where(Member.email == "grace.hopper@example.com"))
-            ).first()
+            ada = (await session.exec(select(Member).where(Member.email == "ada.lovelace@example.com"))).first()
+            alan = (await session.exec(select(Member).where(Member.email == "alan.turing@example.com"))).first()
+            grace = (await session.exec(select(Member).where(Member.email == "grace.hopper@example.com"))).first()
 
-            copy_dq1 = (
-                await session.exec(select(BookCopy).where(BookCopy.barcode == "DQ-001"))
-            ).first()
-            copy_ohy1 = (
-                await session.exec(select(BookCopy).where(BookCopy.barcode == "OHY-001"))
-            ).first()
-            copy_cp1 = (
-                await session.exec(select(BookCopy).where(BookCopy.barcode == "CP-001"))
-            ).first()
+            copy_dq1 = (await session.exec(select(BookCopy).where(BookCopy.barcode == "DQ-001"))).first()
+            copy_ohy1 = (await session.exec(select(BookCopy).where(BookCopy.barcode == "OHY-001"))).first()
+            copy_cp1 = (await session.exec(select(BookCopy).where(BookCopy.barcode == "CP-001"))).first()
 
             loans_added = 0
             if ada and copy_dq1:
