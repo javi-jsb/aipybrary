@@ -1,21 +1,15 @@
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import StrEnum
-from math import ceil
 
-import uuid_utils
-from pydantic import computed_field, field_validator
-from sqlalchemy import String, UniqueConstraint, text
+from pydantic import field_validator
+from sqlalchemy import String, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
-
-def _uuid7() -> uuid.UUID:
-    return uuid.UUID(bytes=uuid_utils.uuid7().bytes)
-
-
-def _utcnow() -> datetime:
-    return datetime.now(UTC).replace(tzinfo=None)
+from app.core.entity import Entity
+from app.core.pagination import PaginatedResponse
+from app.core.sorting import SortOrder  # noqa: F401
 
 
 class MemberStatus(StrEnum):
@@ -28,11 +22,6 @@ class SortBy(StrEnum):
     email = "email"
     status = "status"
     created_at = "created_at"
-
-
-class SortOrder(StrEnum):
-    asc = "asc"
-    desc = "desc"
 
 
 # Name the email unique constraint explicitly so the SQL repository can tell an
@@ -51,22 +40,13 @@ def _validate_email(v: str | None) -> str | None:
     return normalized
 
 
-class Member(SQLModel, table=True):
+class Member(Entity, table=True):
     __tablename__ = "members"
     __table_args__ = (UniqueConstraint("email", name=EMAIL_CONSTRAINT),)
 
-    id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
     full_name: str = Field(max_length=300)
     email: str = Field(max_length=320)
     status: MemberStatus = Field(default=MemberStatus.active, sa_type=String(length=20))
-    created_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()")},
-    )
-    updated_at: datetime = Field(
-        default_factory=_utcnow,
-        sa_column_kwargs={"server_default": text("now()"), "onupdate": _utcnow},
-    )
 
 
 class MemberCreate(SQLModel):
@@ -100,13 +80,5 @@ class MemberPublic(SQLModel):
     updated_at: datetime
 
 
-class MemberListResponse(SQLModel):
-    items: list[MemberPublic]
-    total: int
-    page: int
-    size: int
-
-    @computed_field
-    @property
-    def pages(self) -> int:
-        return ceil(self.total / self.size) if self.total > 0 else 0
+class MemberListResponse(PaginatedResponse[MemberPublic]):
+    pass

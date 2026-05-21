@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
 from app.config import settings
+from app.core.entity import _utcnow
 from app.loans.domain.loan_exceptions import (
     BookCopyNotAvailableError,
     BookCopyNotFoundError,
@@ -21,7 +22,6 @@ from app.loans.domain.loan_model import (
     LoanStatus,
     SortBy,
     SortOrder,
-    _utcnow,
 )
 from app.loans.domain.loan_repository import LoanRepository
 from app.members.domain.member_model import MemberStatus
