@@ -19,16 +19,11 @@ from app.books.domain.book_repository import BookRepository, BookWithCounts
 from app.loans.domain.loan_model import Loan
 
 _copies_total_sq = (
-    select(func.count(col(BookCopy.id)))
-    .where(col(BookCopy.book_id) == col(Book.id))
-    .correlate(Book)
-    .scalar_subquery()
+    select(func.count(col(BookCopy.id))).where(col(BookCopy.book_id) == col(Book.id)).correlate(Book).scalar_subquery()
 )
 
 _active_loan_for_copy = (
-    select(literal(1))
-    .where(col(Loan.book_copy_id) == col(BookCopy.id))
-    .where(col(Loan.returned_at).is_(None))
+    select(literal(1)).where(col(Loan.book_copy_id) == col(BookCopy.id)).where(col(Loan.returned_at).is_(None))
 )
 
 _copies_available_sq = (

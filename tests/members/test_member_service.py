@@ -118,9 +118,7 @@ async def test_get_filtered_by_status() -> None:
             status=MemberStatus.suspended,
         )
     )
-    result = await service.get_filtered(
-        None, None, MemberStatus.suspended, SortBy.created_at, SortOrder.desc, 1, 20
-    )
+    result = await service.get_filtered(None, None, MemberStatus.suspended, SortBy.created_at, SortOrder.desc, 1, 20)
     assert result.total == 1
     assert result.items[0].status is MemberStatus.suspended
 

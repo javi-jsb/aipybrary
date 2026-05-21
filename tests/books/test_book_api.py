@@ -160,9 +160,7 @@ async def test_list_books_filter_by_title(client: AsyncClient) -> None:
 
 
 async def test_list_books_filter_combined(client: AsyncClient) -> None:
-    await _create_book(
-        client, title="One Hundred Years of Solitude", author="Gabriel García Márquez"
-    )
+    await _create_book(client, title="One Hundred Years of Solitude", author="Gabriel García Márquez")
     await _create_book(client, title="Love in the Time of Cholera", author="Gabriel García Márquez")
     await _create_book(client, title="Solitude", author="Another Author")
 

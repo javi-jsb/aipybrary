@@ -33,9 +33,7 @@ class MemberService:
         page: int,
         size: int,
     ) -> MemberListResponse:
-        members, total = await self._repository.get_filtered(
-            full_name, email, status, sort_by, order, page, size
-        )
+        members, total = await self._repository.get_filtered(full_name, email, status, sort_by, order, page, size)
         items = [MemberPublic.model_validate(m) for m in members]
         return MemberListResponse(items=items, total=total, page=page, size=size)
 

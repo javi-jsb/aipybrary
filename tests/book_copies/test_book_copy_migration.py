@@ -37,9 +37,7 @@ async def test_book_copies_table_created_with_constraints() -> None:
 
             fks = insp.get_foreign_keys("book_copies")
             book_fks = [
-                fk
-                for fk in fks
-                if fk["referred_table"] == "books" and fk["constrained_columns"] == ["book_id"]
+                fk for fk in fks if fk["referred_table"] == "books" and fk["constrained_columns"] == ["book_id"]
             ]
             assert book_fks, "expected FK from book_copies.book_id to books.id"
             fk = book_fks[0]

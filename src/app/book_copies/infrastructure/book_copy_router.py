@@ -61,26 +61,18 @@ async def create_book_copy(data: BookCopyCreate, service: ServiceDep) -> BookCop
     try:
         copy = await service.create(data)
     except BookCopyBookNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=_BOOK_NOT_FOUND_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=_BOOK_NOT_FOUND_DETAIL) from None
     except DuplicateBarcodeError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_BARCODE_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_BARCODE_DETAIL) from None
     return BookCopyPublic.model_validate(copy)
 
 
 @router.patch("/{copy_id}", response_model=BookCopyPublic)
-async def update_book_copy(
-    copy_id: uuid.UUID, data: BookCopyUpdate, service: ServiceDep
-) -> BookCopyPublic:
+async def update_book_copy(copy_id: uuid.UUID, data: BookCopyUpdate, service: ServiceDep) -> BookCopyPublic:
     try:
         copy = await service.update(copy_id, data)
     except DuplicateBarcodeError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_BARCODE_DETAIL
-        ) from None
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_BARCODE_DETAIL) from None
     if copy is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book copy not found")
     return BookCopyPublic.model_validate(copy)

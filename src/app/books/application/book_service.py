@@ -42,13 +42,8 @@ class BookService:
         page: int,
         size: int,
     ) -> BookListResponse:
-        books_with_counts, total = await self._repository.get_filtered(
-            title, author, sort_by, order, page, size
-        )
-        items = [
-            _to_public(item.book, item.copies_total, item.copies_available)
-            for item in books_with_counts
-        ]
+        books_with_counts, total = await self._repository.get_filtered(title, author, sort_by, order, page, size)
+        items = [_to_public(item.book, item.copies_total, item.copies_available) for item in books_with_counts]
         return BookListResponse(items=items, total=total, page=page, size=size)
 
     async def update(self, book_id: uuid.UUID, data: BookUpdate) -> BookPublic | None:

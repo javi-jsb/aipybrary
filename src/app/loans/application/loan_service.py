@@ -60,9 +60,7 @@ class LoanService:
             raise LoanLimitExceededError
 
         due_date = _utcnow() + timedelta(days=settings.LOAN_PERIOD_DAYS)
-        return await self._loan_repository.create(
-            LoanCreate(member_id=member_id, book_copy_id=book_copy_id), due_date
-        )
+        return await self._loan_repository.create(LoanCreate(member_id=member_id, book_copy_id=book_copy_id), due_date)
 
     async def return_loan(self, loan_id: uuid.UUID) -> Loan | None:
         loan = await self._loan_repository.get_by_id(loan_id)
