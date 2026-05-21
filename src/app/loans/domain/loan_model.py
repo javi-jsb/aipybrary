@@ -5,7 +5,7 @@ from math import ceil
 
 import uuid_utils
 from pydantic import computed_field
-from sqlalchemy import text
+from sqlalchemy import Column, ForeignKey, Uuid, text
 from sqlmodel import Field, SQLModel
 
 
@@ -38,8 +38,22 @@ class Loan(SQLModel, table=True):
     __tablename__ = "loans"
 
     id: uuid.UUID = Field(default_factory=_uuid7, primary_key=True)
-    member_id: uuid.UUID = Field(foreign_key="members.id")
-    book_copy_id: uuid.UUID = Field(foreign_key="book_copies.id")
+    member_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid(),
+            ForeignKey("members.id", ondelete="RESTRICT", name="fk_loans_member_id_members"),
+            nullable=False,
+            index=True,
+        )
+    )
+    book_copy_id: uuid.UUID = Field(
+        sa_column=Column(
+            Uuid(),
+            ForeignKey("book_copies.id", ondelete="RESTRICT", name="fk_loans_book_copy_id_book_copies"),
+            nullable=False,
+            index=True,
+        )
+    )
     due_date: datetime
     returned_at: datetime | None = Field(default=None)
     created_at: datetime = Field(

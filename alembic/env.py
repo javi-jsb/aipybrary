@@ -8,6 +8,7 @@ from sqlmodel import SQLModel
 
 import app.book_copies.domain.book_copy_model  # noqa: F401 — register models with metadata
 import app.books.domain.book_model  # noqa: F401 — register models with metadata
+import app.loans.domain.loan_model  # noqa: F401 — register models with metadata
 import app.members.domain.member_model  # noqa: F401 — register models with metadata
 from alembic import context
 from app.config import settings
