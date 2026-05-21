@@ -2,13 +2,13 @@ import uuid
 
 import pytest
 
+from app.core.sorting import SortOrder
 from app.members.application.member_service import MemberService
 from app.members.domain.member_model import (
     MemberCreate,
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.domain.member_repository import MemberRepository
 from tests.fakes.member_fakes import FakeMemberRepository

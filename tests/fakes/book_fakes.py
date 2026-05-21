@@ -1,7 +1,8 @@
 import uuid
 
-from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy, SortOrder
+from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy
 from app.books.domain.book_repository import BookRepository, BookWithCounts
+from app.core.sorting import SortOrder
 
 
 class FakeBookRepository(BookRepository):

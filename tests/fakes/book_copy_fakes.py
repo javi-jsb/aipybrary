@@ -5,9 +5,9 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyCreate,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
+from app.core.sorting import SortOrder
 
 
 class FakeBookCopyRepository(BookCopyRepository):

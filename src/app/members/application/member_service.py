@@ -1,5 +1,6 @@
 import uuid
 
+from app.core.sorting import SortOrder
 from app.members.domain.member_model import (
     Member,
     MemberCreate,
@@ -8,7 +9,6 @@ from app.members.domain.member_model import (
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.domain.member_repository import MemberRepository
 

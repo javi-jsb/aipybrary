@@ -1,12 +1,12 @@
 import uuid
 from datetime import UTC, datetime
 
+from app.core.sorting import SortOrder
 from app.loans.domain.loan_model import (
     Loan,
     LoanCreate,
     LoanStatus,
     SortBy,
-    SortOrder,
 )
 from app.loans.domain.loan_repository import LoanRepository
 

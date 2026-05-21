@@ -7,9 +7,9 @@ from app.books.domain.book_model import (
     BookPublic,
     BookUpdate,
     SortBy,
-    SortOrder,
 )
 from app.books.domain.book_repository import BookRepository
+from app.core.sorting import SortOrder
 
 
 def _to_public(book: Book, copies_total: int, copies_available: int) -> BookPublic:

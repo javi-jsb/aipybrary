@@ -13,10 +13,10 @@ from app.books.domain.book_model import (
     BookCreate,
     BookUpdate,
     SortBy,
-    SortOrder,
 )
 from app.books.domain.book_repository import BookRepository, BookWithCounts
 from app.core.db import is_constraint_violated
+from app.core.sorting import SortOrder
 from app.loans.domain.loan_model import Loan
 
 _copies_total_sq = (

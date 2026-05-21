@@ -5,7 +5,9 @@ from sqlalchemy import func
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.loans.domain.loan_model import Loan, LoanCreate, LoanStatus, SortBy, SortOrder, _utcnow
+from app.core.entity import _utcnow
+from app.core.sorting import SortOrder
+from app.loans.domain.loan_model import Loan, LoanCreate, LoanStatus, SortBy
 from app.loans.domain.loan_repository import LoanRepository
 
 

@@ -2,7 +2,8 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
-from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy, SortOrder
+from app.books.domain.book_model import Book, BookCreate, BookUpdate, SortBy
+from app.core.sorting import SortOrder
 
 
 class BookWithCounts(NamedTuple):

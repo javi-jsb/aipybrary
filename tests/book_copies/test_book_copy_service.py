@@ -8,10 +8,10 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyCreate,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
 from app.books.domain.book_model import Book
+from app.core.sorting import SortOrder
 from tests.fakes.book_copy_fakes import FakeBookCopyRepository
 from tests.fakes.book_fakes import FakeBookRepository
 

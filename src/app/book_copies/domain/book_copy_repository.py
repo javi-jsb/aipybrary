@@ -6,8 +6,8 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyCreate,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
+from app.core.sorting import SortOrder
 
 
 class BookCopyRepository(ABC):

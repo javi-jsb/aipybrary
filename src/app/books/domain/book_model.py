@@ -8,7 +8,6 @@ from sqlmodel import Field, SQLModel
 
 from app.core.entity import Entity
 from app.core.pagination import PaginatedResponse
-from app.core.sorting import SortOrder  # noqa: F401
 
 
 class SortBy(StrEnum):

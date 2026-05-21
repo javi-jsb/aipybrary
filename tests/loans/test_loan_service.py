@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.book_copies.domain.book_copy_model import BookCopy
+from app.core.sorting import SortOrder
 from app.loans.application.loan_service import LoanService
 from app.loans.domain.loan_exceptions import (
     BookCopyNotAvailableError,
@@ -19,7 +20,6 @@ from app.loans.domain.loan_model import (
     Loan,
     LoanStatus,
     SortBy,
-    SortOrder,
 )
 from app.members.domain.member_model import Member, MemberStatus
 from tests.fakes.book_copy_fakes import FakeBookCopyRepository

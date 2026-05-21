@@ -6,6 +6,7 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import is_constraint_violated
+from app.core.sorting import SortOrder
 from app.members.domain.member_exceptions import DuplicateEmailError
 from app.members.domain.member_model import (
     EMAIL_CONSTRAINT,
@@ -14,7 +15,6 @@ from app.members.domain.member_model import (
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.domain.member_repository import MemberRepository
 

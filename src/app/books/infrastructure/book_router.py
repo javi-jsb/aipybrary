@@ -12,9 +12,9 @@ from app.books.domain.book_model import (
     BookPublic,
     BookUpdate,
     SortBy,
-    SortOrder,
 )
 from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
+from app.core.sorting import SortOrder
 from app.database import get_session
 
 router = APIRouter(prefix="/books", tags=["books"])

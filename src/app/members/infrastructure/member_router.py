@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.sorting import SortOrder
 from app.database import get_session
 from app.members.application.member_service import MemberService
 from app.members.domain.member_exceptions import DuplicateEmailError
@@ -14,7 +15,6 @@ from app.members.domain.member_model import (
     MemberStatus,
     MemberUpdate,
     SortBy,
-    SortOrder,
 )
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository
 

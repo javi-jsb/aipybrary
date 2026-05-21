@@ -8,10 +8,10 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyPublic,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
 from app.book_copies.domain.book_copy_repository import BookCopyRepository
 from app.books.domain.book_repository import BookRepository
+from app.core.sorting import SortOrder
 
 
 class BookCopyService:

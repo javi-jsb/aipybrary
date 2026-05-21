@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.book_copies.infrastructure.sql_book_copy_repository import SqlModelBookCopyRepository
+from app.core.sorting import SortOrder
 from app.database import get_session
 from app.loans.application.loan_service import LoanService
 from app.loans.domain.loan_exceptions import (
@@ -23,7 +24,6 @@ from app.loans.domain.loan_model import (
     LoanPublic,
     LoanStatus,
     SortBy,
-    SortOrder,
 )
 from app.loans.infrastructure.sql_loan_repository import SqlModelLoanRepository
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository

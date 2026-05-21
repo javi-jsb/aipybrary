@@ -15,10 +15,10 @@ from app.book_copies.domain.book_copy_model import (
     BookCopyPublic,
     BookCopyUpdate,
     SortBy,
-    SortOrder,
 )
 from app.book_copies.infrastructure.sql_book_copy_repository import SqlModelBookCopyRepository
 from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
+from app.core.sorting import SortOrder
 from app.database import get_session
 
 router = APIRouter(prefix="/book-copies", tags=["book-copies"])
