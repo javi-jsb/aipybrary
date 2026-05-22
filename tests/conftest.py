@@ -8,7 +8,6 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from alembic import command
 from app.config import settings
-from app.core.security import hash_password
 from app.database import get_session
 from app.main import app
 from app.users.domain.user_model import User, UserRole
@@ -38,7 +37,7 @@ async def session(db_setup: None) -> AsyncGenerator[AsyncSession]:
 
 
 def _fake_staff_user() -> User:
-    return User(email="staff@test.example", password_hash=hash_password("x"), role=UserRole.staff, is_active=True)
+    return User(email="staff@test.example", password_hash="fake-hash", role=UserRole.staff, is_active=True)
 
 
 @pytest.fixture
@@ -46,7 +45,12 @@ async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient]:
     """Authenticated client — get_current_user returns a canned staff user."""
 
     async def _override_get_session() -> AsyncGenerator[AsyncSession]:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
     app.dependency_overrides[get_session] = _override_get_session
     app.dependency_overrides[get_current_user] = _fake_staff_user
@@ -61,7 +65,12 @@ async def auth_client(session: AsyncSession) -> AsyncGenerator[AsyncClient]:
     """Unauthenticated client — no get_current_user override; used to test the real auth flow."""
 
     async def _override_get_session() -> AsyncGenerator[AsyncSession]:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
     app.dependency_overrides[get_session] = _override_get_session
     transport = ASGITransport(app=app)

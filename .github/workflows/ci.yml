@@ -44,6 +44,7 @@ jobs:
           POSTGRES_PORT: 5432
           POSTGRES_DB: aipybrary_test
           POSTGRES_TEST_DB: aipybrary_test
+          JWT_SECRET: ci-test-secret
 
       - name: Extract coverage percentage
         run: echo "COVERAGE=$(uv run coverage report --format=total)" >> $GITHUB_ENV
