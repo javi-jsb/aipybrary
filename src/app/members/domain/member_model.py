@@ -64,6 +64,17 @@ class MemberPublic(SQLModel):
     created_at: datetime
     updated_at: datetime
 
+    @classmethod
+    def from_member(cls, member: Member, email: str) -> "MemberPublic":
+        return cls(
+            id=member.id,
+            full_name=member.full_name,
+            email=email,
+            status=member.status,
+            created_at=member.created_at,
+            updated_at=member.updated_at,
+        )
+
 
 class MemberCreateResponse(MemberPublic):
     initial_password: str

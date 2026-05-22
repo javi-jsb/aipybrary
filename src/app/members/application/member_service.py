@@ -19,17 +19,6 @@ from app.users.domain.user_model import User, UserRole
 from app.users.domain.user_repository import UserRepository
 
 
-def _to_public(member: Member, email: str) -> MemberPublic:
-    return MemberPublic(
-        id=member.id,
-        full_name=member.full_name,
-        email=email,
-        status=member.status,
-        created_at=member.created_at,
-        updated_at=member.updated_at,
-    )
-
-
 class MemberService:
     def __init__(self, user_repository: UserRepository, member_repository: MemberRepository) -> None:
         self._user_repository = user_repository
@@ -68,7 +57,7 @@ class MemberService:
         size: int,
     ) -> MemberListResponse:
         rows, total = await self._member_repository.get_filtered(full_name, email, status, sort_by, order, page, size)
-        items = [_to_public(member, email) for member, email in rows]
+        items = [MemberPublic.from_member(member, email) for member, email in rows]
         return MemberListResponse(items=items, total=total, page=page, size=size)
 
     async def update(self, member_id: uuid.UUID, data: MemberUpdate) -> tuple[Member, str] | None:

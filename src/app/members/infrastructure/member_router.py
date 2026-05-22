@@ -55,14 +55,7 @@ async def get_member(member_id: uuid.UUID, service: ServiceDep) -> MemberPublic:
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     member, email = result
-    return MemberPublic(
-        id=member.id,
-        full_name=member.full_name,
-        email=email,
-        status=member.status,
-        created_at=member.created_at,
-        updated_at=member.updated_at,
-    )
+    return MemberPublic.from_member(member, email)
 
 
 @router.post("", response_model=MemberCreateResponse, status_code=status.HTTP_201_CREATED)
@@ -79,14 +72,7 @@ async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: Servi
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
     member, email = result
-    return MemberPublic(
-        id=member.id,
-        full_name=member.full_name,
-        email=email,
-        status=member.status,
-        created_at=member.created_at,
-        updated_at=member.updated_at,
-    )
+    return MemberPublic.from_member(member, email)
 
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
