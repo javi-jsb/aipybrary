@@ -24,7 +24,7 @@ class SqlModelUserRepository(UserRepository):
     async def create(self, user: User) -> User:
         self._session.add(user)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, EMAIL_CONSTRAINT):

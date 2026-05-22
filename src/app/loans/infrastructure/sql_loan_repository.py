@@ -22,7 +22,7 @@ class SqlModelLoanRepository(LoanRepository):
             due_date=due_date,
         )
         self._session.add(loan)
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(loan)
         return loan
 
@@ -31,7 +31,7 @@ class SqlModelLoanRepository(LoanRepository):
 
     async def delete(self, loan: Loan) -> None:
         await self._session.delete(loan)
-        await self._session.commit()
+        await self._session.flush()
 
     async def count_active_for_member(self, member_id: uuid.UUID) -> int:
         stmt = select(func.count(col(Loan.id))).where(
@@ -52,7 +52,7 @@ class SqlModelLoanRepository(LoanRepository):
         loan.returned_at = now
         loan.updated_at = now
         self._session.add(loan)
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(loan)
         return loan
 
@@ -61,7 +61,7 @@ class SqlModelLoanRepository(LoanRepository):
         loan.returned_at = None
         loan.updated_at = now
         self._session.add(loan)
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(loan)
         return loan
 

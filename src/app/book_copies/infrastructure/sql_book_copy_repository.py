@@ -26,7 +26,7 @@ class SqlModelBookCopyRepository(BookCopyRepository):
         copy = BookCopy.model_validate(data)
         self._session.add(copy)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, BARCODE_CONSTRAINT):
@@ -75,7 +75,7 @@ class SqlModelBookCopyRepository(BookCopyRepository):
         copy.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(copy)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, BARCODE_CONSTRAINT):
@@ -86,7 +86,7 @@ class SqlModelBookCopyRepository(BookCopyRepository):
 
     async def delete(self, copy: BookCopy) -> None:
         await self._session.delete(copy)
-        await self._session.commit()
+        await self._session.flush()
 
     async def count_by_book_id(self, book_id: uuid.UUID) -> int:
         stmt = select(func.count(col(BookCopy.id))).where(col(BookCopy.book_id) == book_id)

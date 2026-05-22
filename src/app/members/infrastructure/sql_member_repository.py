@@ -23,7 +23,7 @@ class SqlModelMemberRepository(MemberRepository):
 
     async def create(self, member: Member) -> Member:
         self._session.add(member)
-        await self._session.commit()
+        await self._session.flush()
         await self._session.refresh(member)
         return member
 
@@ -78,7 +78,7 @@ class SqlModelMemberRepository(MemberRepository):
         member.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(member)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError:
             await self._session.rollback()
             raise
@@ -87,4 +87,4 @@ class SqlModelMemberRepository(MemberRepository):
 
     async def delete(self, member: Member) -> None:
         await self._session.delete(member)
-        await self._session.commit()
+        await self._session.flush()
