@@ -7,7 +7,7 @@ from app.members.domain.member_model import Member, MemberCreate, MemberStatus
 
 
 def test_member_gets_uuid_and_timestamps() -> None:
-    member = Member(full_name="Ada Lovelace", email="ada@example.com")
+    member = Member(full_name="Ada Lovelace", user_id=uuid.uuid4())
     assert isinstance(member.id, uuid.UUID)
     assert member.id.version == 7
     assert member.created_at is not None
@@ -15,7 +15,7 @@ def test_member_gets_uuid_and_timestamps() -> None:
 
 
 def test_status_defaults_to_active() -> None:
-    member = Member(full_name="Grace Hopper", email="grace@example.com")
+    member = Member(full_name="Grace Hopper", user_id=uuid.uuid4())
     assert member.status is MemberStatus.active
 
 
