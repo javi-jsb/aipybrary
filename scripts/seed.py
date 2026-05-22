@@ -1,11 +1,12 @@
-"""Seed the database with example books, members, book copies, and loans.
+"""Seed the database with example users, books, members, book copies, and loans.
 
 Idempotent per entity: each block is seeded only if no records of that type
 exist — seeding one entity type is never skipped because another has data.
-Seeding order: books → members → book copies → loans.
+Seeding order: users → books → members → book copies → loans.
 """
 
 import asyncio
+import os
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -16,18 +17,46 @@ from sqlmodel import select  # noqa: E402
 
 from app.book_copies.domain.book_copy_model import BookCopy  # noqa: E402
 from app.books.domain.book_model import Book, BookCreate  # noqa: E402
+from app.core.security import hash_password  # noqa: E402
 from app.database import async_session  # noqa: E402
 from app.loans.domain.loan_model import Loan  # noqa: E402
-from app.members.domain.member_model import (  # noqa: E402
-    Member,
-    MemberCreate,
-    MemberStatus,
-)
+from app.members.domain.member_model import Member, MemberStatus  # noqa: E402
+from app.users.domain.user_model import User, UserRole  # noqa: E402
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
+
+# ---------------------------------------------------------------------------
+# Users — admin and staff bootstrap accounts
+# ---------------------------------------------------------------------------
+
+_ADMIN_EMAIL = os.environ.get("SEED_ADMIN_EMAIL", "admin@aipybrary.dev")
+_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "Admin1234!")
+
+SAMPLE_USERS = [
+    {
+        "email": _ADMIN_EMAIL,
+        "password": _ADMIN_PASSWORD,
+        "role": UserRole.admin,
+    },
+    {
+        "email": "alice.smith@aipybrary.dev",
+        "password": "Staff1234!",
+        "role": UserRole.staff,
+    },
+    {
+        "email": "bob.jones@aipybrary.dev",
+        "password": "Staff1234!",
+        "role": UserRole.staff,
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Books
+# ---------------------------------------------------------------------------
 
 SAMPLE_BOOKS = [
     # Hispanic literature
@@ -167,37 +196,49 @@ SAMPLE_BOOKS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Members — each paired with a member-role User
+# ---------------------------------------------------------------------------
+
 SAMPLE_MEMBERS = [
-    MemberCreate(full_name="Ada Lovelace", email="ada.lovelace@example.com"),
-    MemberCreate(full_name="Alan Turing", email="alan.turing@example.com"),
-    MemberCreate(full_name="Grace Hopper", email="grace.hopper@example.com"),
-    MemberCreate(full_name="Katherine Johnson", email="katherine.johnson@example.com"),
-    MemberCreate(full_name="Edsger Dijkstra", email="edsger.dijkstra@example.com"),
-    MemberCreate(full_name="Barbara Liskov", email="barbara.liskov@example.com"),
-    MemberCreate(full_name="Donald Knuth", email="donald.knuth@example.com"),
-    MemberCreate(full_name="Margaret Hamilton", email="margaret.hamilton@example.com"),
-    MemberCreate(full_name="Tim Berners-Lee", email="tim.bernerslee@example.com"),
+    {"full_name": "Ada Lovelace", "email": "ada.lovelace@example.com", "status": MemberStatus.active},
+    {"full_name": "Alan Turing", "email": "alan.turing@example.com", "status": MemberStatus.active},
+    {"full_name": "Grace Hopper", "email": "grace.hopper@example.com", "status": MemberStatus.active},
+    {"full_name": "Katherine Johnson", "email": "katherine.johnson@example.com", "status": MemberStatus.active},
+    {"full_name": "Edsger Dijkstra", "email": "edsger.dijkstra@example.com", "status": MemberStatus.active},
+    {"full_name": "Barbara Liskov", "email": "barbara.liskov@example.com", "status": MemberStatus.active},
+    {"full_name": "Donald Knuth", "email": "donald.knuth@example.com", "status": MemberStatus.active},
+    {"full_name": "Margaret Hamilton", "email": "margaret.hamilton@example.com", "status": MemberStatus.active},
+    {"full_name": "Tim Berners-Lee", "email": "tim.bernerslee@example.com", "status": MemberStatus.active},
     # Suspended members — exercise status filtering/sorting
-    MemberCreate(
-        full_name="Ken Thompson",
-        email="ken.thompson@example.com",
-        status=MemberStatus.suspended,
-    ),
-    MemberCreate(
-        full_name="Dennis Ritchie",
-        email="dennis.ritchie@example.com",
-        status=MemberStatus.suspended,
-    ),
-    MemberCreate(
-        full_name="Linus Torvalds",
-        email="linus.torvalds@example.com",
-        status=MemberStatus.suspended,
-    ),
+    {"full_name": "Ken Thompson", "email": "ken.thompson@example.com", "status": MemberStatus.suspended},
+    {"full_name": "Dennis Ritchie", "email": "dennis.ritchie@example.com", "status": MemberStatus.suspended},
+    {"full_name": "Linus Torvalds", "email": "linus.torvalds@example.com", "status": MemberStatus.suspended},
 ]
+
+_MEMBER_DEFAULT_PASSWORD = "Member1234!"
 
 
 async def seed() -> None:
     async with async_session() as session:
+        # ----- Users (admin + staff) -----
+        if (await session.exec(select(User).limit(1))).first() is not None:
+            print("Database already contains users — skipping user seed.")
+        else:
+            for u in SAMPLE_USERS:
+                session.add(
+                    User(
+                        email=u["email"],
+                        password_hash=hash_password(u["password"]),
+                        role=u["role"],
+                        is_active=True,
+                    )
+                )
+            await session.commit()
+            print(f"Seeded {len(SAMPLE_USERS)} users (admin + staff).")
+            print(f"  Admin login: {_ADMIN_EMAIL} / {_ADMIN_PASSWORD}")
+
+        # ----- Books -----
         if (await session.exec(select(Book).limit(1))).first() is not None:
             print("Database already contains books — skipping book seed.")
         else:
@@ -206,18 +247,28 @@ async def seed() -> None:
             await session.commit()
             print(f"Seeded {len(SAMPLE_BOOKS)} books.")
 
+        # ----- Members (each with a linked member-role User) -----
         if (await session.exec(select(Member).limit(1))).first() is not None:
             print("Database already contains members — skipping member seed.")
         else:
-            for member_data in SAMPLE_MEMBERS:
-                session.add(Member.model_validate(member_data))
+            for m in SAMPLE_MEMBERS:
+                user = User(
+                    email=m["email"],
+                    password_hash=hash_password(_MEMBER_DEFAULT_PASSWORD),
+                    role=UserRole.member,
+                    is_active=True,
+                )
+                session.add(user)
+                await session.flush()  # get user.id before creating the member
+                member = Member(full_name=m["full_name"], status=m["status"], user_id=user.id)
+                session.add(member)
             await session.commit()
-            print(f"Seeded {len(SAMPLE_MEMBERS)} members.")
+            print(f"Seeded {len(SAMPLE_MEMBERS)} members with linked member-role users.")
 
+        # ----- Book copies -----
         if (await session.exec(select(BookCopy).limit(1))).first() is not None:
             print("Database already contains book copies — skipping book copy seed.")
         else:
-            # Look up book ISBNs to find specific book IDs for the copies.
             books_by_isbn: dict[str, Book] = {}
             for book in (await session.exec(select(Book))).all():
                 if book.isbn:
@@ -245,15 +296,21 @@ async def seed() -> None:
             await session.commit()
             print(f"Seeded {copies_added} book copies.")
 
+        # ----- Loans -----
         if (await session.exec(select(Loan).limit(1))).first() is not None:
             print("Database already contains loans — skipping loan seed.")
         else:
             now = _utcnow()
 
-            # Look up members and copies by known values.
-            ada = (await session.exec(select(Member).where(Member.email == "ada.lovelace@example.com"))).first()
-            alan = (await session.exec(select(Member).where(Member.email == "alan.turing@example.com"))).first()
-            grace = (await session.exec(select(Member).where(Member.email == "grace.hopper@example.com"))).first()
+            async def _member_by_email(email: str) -> Member | None:
+                user = (await session.exec(select(User).where(User.email == email))).first()
+                if user is None:
+                    return None
+                return (await session.exec(select(Member).where(Member.user_id == user.id))).first()
+
+            ada = await _member_by_email("ada.lovelace@example.com")
+            alan = await _member_by_email("alan.turing@example.com")
+            grace = await _member_by_email("grace.hopper@example.com")
 
             copy_dq1 = (await session.exec(select(BookCopy).where(BookCopy.barcode == "DQ-001"))).first()
             copy_ohy1 = (await session.exec(select(BookCopy).where(BookCopy.barcode == "OHY-001"))).first()
@@ -261,34 +318,20 @@ async def seed() -> None:
 
             loans_added = 0
             if ada and copy_dq1:
-                # Active loan: due in future
-                session.add(
-                    Loan(
-                        member_id=ada.id,
-                        book_copy_id=copy_dq1.id,
-                        due_date=now + timedelta(days=10),
-                    )
-                )
+                session.add(Loan(member_id=ada.id, book_copy_id=copy_dq1.id, due_date=now + timedelta(days=10)))
                 loans_added += 1
             if alan and copy_ohy1:
-                # Overdue loan: due in the past, not returned
-                session.add(
-                    Loan(
-                        member_id=alan.id,
-                        book_copy_id=copy_ohy1.id,
-                        due_date=now - timedelta(days=5),
-                    )
-                )
+                session.add(Loan(member_id=alan.id, book_copy_id=copy_ohy1.id, due_date=now - timedelta(days=5)))
                 loans_added += 1
             if grace and copy_cp1:
-                # Returned loan
-                returned_loan = Loan(
-                    member_id=grace.id,
-                    book_copy_id=copy_cp1.id,
-                    due_date=now - timedelta(days=20),
-                    returned_at=now - timedelta(days=3),
+                session.add(
+                    Loan(
+                        member_id=grace.id,
+                        book_copy_id=copy_cp1.id,
+                        due_date=now - timedelta(days=20),
+                        returned_at=now - timedelta(days=3),
+                    )
                 )
-                session.add(returned_loan)
                 loans_added += 1
             await session.commit()
             print(f"Seeded {loans_added} loans.")
