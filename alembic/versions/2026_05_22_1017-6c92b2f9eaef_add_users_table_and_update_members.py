@@ -33,6 +33,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email", name="uq_users_email"),
     )
+    # `user_id` is added NOT NULL with no server default: this assumes `members`
+    # is empty when the migration runs (clean rebuilds; no production data yet).
+    # A populated table would need a 3-step nullable -> backfill -> SET NOT NULL.
     op.add_column("members", sa.Column("user_id", sa.Uuid(), nullable=False))
     op.drop_constraint("uq_members_email", "members", type_="unique")
     op.create_unique_constraint("uq_members_user_id", "members", ["user_id"])

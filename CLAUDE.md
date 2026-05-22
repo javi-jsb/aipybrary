@@ -116,7 +116,7 @@ Cross-slice infrastructure imports (e.g., `sql_member_repository` importing `Use
 
 ### Authentication and auth gate
 
-All routes except `GET /health` and `POST /auth/login` require a valid JWT bearer token. The dependency `get_current_user` (in `app/users/infrastructure/auth_router.py`) validates the token and resolves the caller to a `User` object. Integration tests bypass this via `app.dependency_overrides[get_current_user]` in `tests/conftest.py`.
+All routes except `GET /health`, `POST /auth/login`, and FastAPI's auto-generated documentation endpoints (`/docs`, `/redoc`, `/openapi.json`) require a valid JWT bearer token. The documentation endpoints are mounted directly on the `app` instance rather than on a router, so the `_auth_gate` dependency does not apply to them. The dependency `get_current_user` (in `app/users/infrastructure/auth_router.py`) validates the token and resolves the caller to a `User` object. Integration tests bypass this via `app.dependency_overrides[get_current_user]` in `tests/conftest.py`.
 
 Endpoints:
 - `POST /auth/login` — accepts OAuth2 form credentials, returns `{"access_token": "...", "token_type": "bearer"}`
