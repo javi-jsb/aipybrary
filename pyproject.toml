@@ -43,6 +43,9 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning:app.members.infrastructure.sql_member_repository",
+]
 
 [tool.coverage.run]
 source = ["app"]

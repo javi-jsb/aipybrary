@@ -31,11 +31,11 @@ class SqlModelMemberRepository(MemberRepository):
         return await self._session.get(Member, member_id)
 
     async def get_by_id_with_email(self, member_id: uuid.UUID) -> tuple[Member, str] | None:
-        stmt = sa_select(Member, User.email).join(User, Member.user_id == User.id).where(Member.id == member_id)
-        row = (await self._session.execute(stmt)).first()
-        if row is None:
+        member = await self._session.get(Member, member_id)
+        if member is None:
             return None
-        return row[0], row[1]
+        user = await self._session.get(User, member.user_id)
+        return member, user.email  # type: ignore[union-attr]  # FK guarantees user exists
 
     async def get_filtered(
         self,
@@ -55,6 +55,9 @@ class SqlModelMemberRepository(MemberRepository):
         if status is not None:
             conditions.append(col(Member.status) == status)
 
+        # session.execute() is intentional: SQLModel's exec() does not support
+        # multi-column selects returning (Model, scalar) pairs. The resulting
+        # DeprecationWarning from sqlmodel is suppressed in pyproject.toml.
         count_stmt = sa_select(func.count(Member.id)).join(User, Member.user_id == User.id)
         if conditions:
             count_stmt = count_stmt.where(*conditions)

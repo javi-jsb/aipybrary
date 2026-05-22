@@ -13,7 +13,7 @@ from app.core.security import (
     verify_password,
 )
 
-_SECRET = "test-secret"
+_SECRET = "test-secret-long-enough-for-hs256-jwt"
 _ALGO = "HS256"
 
 
