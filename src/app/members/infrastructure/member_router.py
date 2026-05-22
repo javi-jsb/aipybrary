@@ -10,6 +10,7 @@ from app.members.application.member_service import MemberService
 from app.members.domain.member_exceptions import DuplicateEmailError
 from app.members.domain.member_model import (
     MemberCreate,
+    MemberCreateResponse,
     MemberListResponse,
     MemberPublic,
     MemberStatus,
@@ -17,6 +18,7 @@ from app.members.domain.member_model import (
     SortBy,
 )
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository
+from app.users.infrastructure.sql_user_repository import SqlModelUserRepository
 
 router = APIRouter(prefix="/members", tags=["members"])
 
@@ -24,7 +26,10 @@ _DUPLICATE_EMAIL_DETAIL = "Email already registered"
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> MemberService:
-    return MemberService(SqlModelMemberRepository(session))
+    return MemberService(
+        user_repository=SqlModelUserRepository(session),
+        member_repository=SqlModelMemberRepository(session),
+    )
 
 
 ServiceDep = Annotated[MemberService, Depends(_get_service)]
@@ -46,30 +51,42 @@ async def list_members(
 
 @router.get("/{member_id}", response_model=MemberPublic)
 async def get_member(member_id: uuid.UUID, service: ServiceDep) -> MemberPublic:
-    member = await service.get_by_id(member_id)
-    if member is None:
+    result = await service.get_by_id(member_id)
+    if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
-    return MemberPublic.model_validate(member)
+    member, email = result
+    return MemberPublic(
+        id=member.id,
+        full_name=member.full_name,
+        email=email,
+        status=member.status,
+        created_at=member.created_at,
+        updated_at=member.updated_at,
+    )
 
 
-@router.post("", response_model=MemberPublic, status_code=status.HTTP_201_CREATED)
-async def create_member(data: MemberCreate, service: ServiceDep) -> MemberPublic:
+@router.post("", response_model=MemberCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_member(data: MemberCreate, service: ServiceDep) -> MemberCreateResponse:
     try:
-        member = await service.create(data)
+        return await service.create(data)
     except DuplicateEmailError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL) from None
-    return MemberPublic.model_validate(member)
 
 
 @router.patch("/{member_id}", response_model=MemberPublic)
 async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: ServiceDep) -> MemberPublic:
-    try:
-        member = await service.update(member_id, data)
-    except DuplicateEmailError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL) from None
-    if member is None:
+    result = await service.update(member_id, data)
+    if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
-    return MemberPublic.model_validate(member)
+    member, email = result
+    return MemberPublic(
+        id=member.id,
+        full_name=member.full_name,
+        email=email,
+        status=member.status,
+        created_at=member.created_at,
+        updated_at=member.updated_at,
+    )
 
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)

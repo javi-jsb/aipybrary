@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from app.core.sorting import SortOrder
 from app.members.domain.member_model import (
     Member,
-    MemberCreate,
     MemberStatus,
     MemberUpdate,
     SortBy,
@@ -13,10 +12,13 @@ from app.members.domain.member_model import (
 
 class MemberRepository(ABC):
     @abstractmethod
-    async def create(self, data: MemberCreate) -> Member: ...
+    async def create(self, member: Member) -> Member: ...
 
     @abstractmethod
     async def get_by_id(self, member_id: uuid.UUID) -> Member | None: ...
+
+    @abstractmethod
+    async def get_by_id_with_email(self, member_id: uuid.UUID) -> tuple[Member, str] | None: ...
 
     @abstractmethod
     async def get_filtered(
@@ -28,7 +30,7 @@ class MemberRepository(ABC):
         order: SortOrder,
         page: int,
         size: int,
-    ) -> tuple[list[Member], int]: ...
+    ) -> tuple[list[tuple[Member, str]], int]: ...
 
     @abstractmethod
     async def update(self, member: Member, data: MemberUpdate) -> Member: ...
