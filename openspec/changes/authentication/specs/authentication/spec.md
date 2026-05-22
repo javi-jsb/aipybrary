@@ -106,7 +106,9 @@ Login SHALL issue a signed JWT access token using the HS256 algorithm. The token
 
 The API SHALL expose `POST /auth/login` that accepts an OAuth2 password form (`username` carrying the email, `password`) and returns a JSON body with `access_token` and `token_type` `"bearer"`. The endpoint SHALL be public — reachable without a token.
 
-Authentication SHALL fail with `401 Unauthorized` when the email is unknown, the password does not match, or the user's `is_active` is `false`.
+The submitted email SHALL be trimmed and lowercased before the user lookup so it matches the normalized form stored on `users`; a differently-cased email authenticates the same account.
+
+Authentication SHALL fail with `401 Unauthorized` when the email is unknown, the password does not match, or the user's `is_active` is `false`. An unknown email and a wrong password SHALL be indistinguishable — same response body and equivalent response time, since a hash verification runs even when no user is found — so registered emails cannot be enumerated.
 
 #### Scenario: Successful login
 
@@ -128,6 +130,12 @@ Authentication SHALL fail with `401 Unauthorized` when the email is unknown, the
 
 - **WHEN** a client sends `POST /auth/login` with valid credentials for a user whose `is_active` is `false`
 - **THEN** the response status code is `401`
+
+#### Scenario: Login is case-insensitive on the email
+
+- **WHEN** a user is registered with the email `case@example.com`
+- **AND** a client sends `POST /auth/login` with username `Case@Example.COM` and the correct password
+- **THEN** the response status code is `200`
 
 ### Requirement: Authenticated user dependency
 
@@ -165,7 +173,9 @@ The API SHALL expose `GET /auth/me` that returns the authenticated user as `User
 
 ### Requirement: All endpoints require authentication
 
-Every HTTP endpoint SHALL reject a request that lacks a valid bearer token with `401 Unauthorized`, except `GET /health` and `POST /auth/login`, which SHALL remain public. Enforcement SHALL be applied centrally at router registration so no endpoint can be left unprotected by omission.
+Every application HTTP endpoint SHALL reject a request that lacks a valid bearer token with `401 Unauthorized`, except `GET /health` and `POST /auth/login`, which SHALL remain public. Enforcement SHALL be applied centrally at router registration so no endpoint can be left unprotected by omission.
+
+FastAPI's auto-generated documentation endpoints — `/docs`, `/redoc`, and `/openapi.json` — are also reachable without a token. They are framework-provided and mounted on the app instance rather than on a gated router, so the central dependency does not reach them; this is accepted, as they expose only the API schema, not data.
 
 This change does NOT check the user's `role` — any authenticated user may reach any endpoint. Role-based restrictions are introduced by the `authorization` change.
 

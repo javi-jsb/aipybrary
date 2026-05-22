@@ -64,7 +64,7 @@ Authentication uses `OAuth2PasswordBearer` + `OAuth2PasswordRequestForm` (FastAP
 
 ### 8. `core/security.py` is pure crypto; `get_current_user` lives in `users/`
 
-`core/security.py` holds only pure, dependency-free primitives: `hash_password`, `verify_password`, `generate_password`, `encode_token`, `decode_token`. The `get_current_user` dependency lives in the `users/` slice.
+`core/security.py` holds only pure, dependency-free primitives: `hash_password`, `verify_password`, `dummy_verify_password`, `generate_password`, `encode_token`, `decode_token`. The `get_current_user` dependency lives in the `users/` slice.
 
 *Rationale:* `get_current_user` must query the `UserRepository`. Placing it in `core/` would make `core/` import from a slice, inverting the established layering and breaking `core/`'s leaf property. Keeping the crypto pure in `core/` and the DB-touching dependency in `users/` preserves clean import boundaries — slices and `main.py` import the dependency from `users/`.
 
@@ -95,6 +95,7 @@ With every endpoint gated, the bootstrap account cannot come from an endpoint. `
 ## Risks / Trade-offs
 
 - **Weak or leaked JWT secret** → the secret is read only from the environment with no insecure production default; `.env.example` documents it and how to generate a strong value.
+- **Login could leak which emails are registered** → an unknown email would otherwise skip the deliberately slow Argon2 verification and fail faster than a wrong password for a known email. `auth_service` runs a dummy verification (`dummy_verify_password`) when no user matches, so both failures take equivalent time.
 - **Generated password returned in the response body** → the plaintext appears once at member creation (logs, screen). Accepted deliberately; the clean alternatives are a separate `credential-lifecycle` change. Mitigated by never persisting or returning it again.
 - **Stateless tokens cannot be revoked before expiry** → accepted; the access-token TTL is kept short and configurable. Revocation/refresh is a later change.
 - **`role` stored but unenforced between change 1 and change 2** → a window where any authenticated user can do anything. Accepted: the changes are sequential and the app is not deployed.
