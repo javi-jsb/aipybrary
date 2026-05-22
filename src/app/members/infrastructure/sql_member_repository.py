@@ -2,7 +2,6 @@ import uuid
 
 from sqlalchemy import func
 from sqlalchemy import select as sa_select
-from sqlalchemy.exc import IntegrityError
 from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -80,11 +79,7 @@ class SqlModelMemberRepository(MemberRepository):
     async def update(self, member: Member, data: MemberUpdate) -> Member:
         member.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(member)
-        try:
-            await self._session.flush()
-        except IntegrityError:
-            await self._session.rollback()
-            raise
+        await self._session.flush()
         await self._session.refresh(member)
         return member
 

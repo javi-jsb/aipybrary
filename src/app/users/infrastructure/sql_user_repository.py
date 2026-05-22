@@ -26,9 +26,8 @@ class SqlModelUserRepository(UserRepository):
         try:
             await self._session.flush()
         except IntegrityError as exc:
-            await self._session.rollback()
             if is_constraint_violated(exc, EMAIL_CONSTRAINT):
                 raise DuplicateEmailError from exc
-            raise  # pragma: no cover
+            raise
         await self._session.refresh(user)
         return user
