@@ -47,6 +47,15 @@ async def test_login_inactive_user(auth_client: AsyncClient, session) -> None:
     assert response.status_code == 401
 
 
+async def test_login_email_is_case_insensitive(auth_client: AsyncClient, session) -> None:
+    await _create_user(session, "casetest@example.com", "password123")
+    response = await auth_client.post(
+        "/auth/login", data={"username": "  CaseTest@Example.COM  ", "password": "password123"}
+    )
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
 # ---------------------------------------------------------------------------
 # GET /auth/me
 # ---------------------------------------------------------------------------

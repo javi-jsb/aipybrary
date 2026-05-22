@@ -20,6 +20,18 @@ def verify_password(plaintext: str, hashed: str) -> bool:
     return _password_hash.verify(plaintext, hashed)
 
 
+_DUMMY_HASH = _password_hash.hash("dummy-password")
+
+
+def dummy_verify_password(plaintext: str) -> None:
+    """Verify against a throwaway hash to keep login timing constant when the email is unknown.
+
+    Without this, a missing user short-circuits before the (deliberately slow) Argon2
+    verification, letting an attacker enumerate valid emails by response time.
+    """
+    _password_hash.verify(plaintext, _DUMMY_HASH)
+
+
 def generate_password(length: int = _PASSWORD_LENGTH) -> str:
     return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
 

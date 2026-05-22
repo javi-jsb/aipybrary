@@ -1,5 +1,5 @@
 from app.config import settings
-from app.core.security import encode_token, verify_password
+from app.core.security import dummy_verify_password, encode_token, verify_password
 from app.users.domain.user_exceptions import InactiveUserError, InvalidCredentialsError
 from app.users.domain.user_repository import UserRepository
 
@@ -9,8 +9,11 @@ class AuthService:
         self._repository = repository
 
     async def authenticate(self, email: str, password: str) -> str:
-        user = await self._repository.get_by_email(email)
-        if user is None or not verify_password(password, user.password_hash):
+        user = await self._repository.get_by_email(email.strip().lower())
+        if user is None:
+            dummy_verify_password(password)
+            raise InvalidCredentialsError
+        if not verify_password(password, user.password_hash):
             raise InvalidCredentialsError
         if not user.is_active:
             raise InactiveUserError
