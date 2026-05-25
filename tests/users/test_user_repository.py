@@ -22,6 +22,9 @@ class _StubSession:
     async def flush(self) -> None:
         raise IntegrityError("stmt", {}, _OTHER_VIOLATION)
 
+    async def rollback(self) -> None:
+        pass
+
     async def refresh(self, _obj: object) -> None:  # pragma: no cover - never reached
         pass
 
