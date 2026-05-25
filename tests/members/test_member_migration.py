@@ -12,25 +12,29 @@ def _alembic_config() -> Config:
     return cfg
 
 
-async def test_members_table_created_with_unique_email() -> None:
+async def test_members_table_has_user_id_fk_and_no_email() -> None:
     async with test_engine.connect() as conn:
 
         def _inspect(sync_conn: sa.Connection) -> None:
             insp = sa.inspect(sync_conn)
             assert "members" in insp.get_table_names()
             columns = {c["name"] for c in insp.get_columns("members")}
-            assert {"id", "full_name", "email", "status", "created_at", "updated_at"} <= columns
+            assert {"id", "full_name", "user_id", "status", "created_at", "updated_at"} <= columns
+            assert "email" not in columns
+
+            fks = insp.get_foreign_keys("members")
+            fk_cols = {tuple(fk["constrained_columns"]) for fk in fks}
+            assert ("user_id",) in fk_cols
+
             uniques = insp.get_unique_constraints("members")
-            assert ("email",) in {tuple(u["column_names"]) for u in uniques}
-            assert any(u["name"] == "uq_members_email" for u in uniques)
+            assert any(u["column_names"] == ["user_id"] for u in uniques)
 
         await conn.run_sync(_inspect)
 
 
 def test_members_migration_is_reversible() -> None:
     cfg = _alembic_config()
-    # The autouse db_setup fixture leaves the DB at head. Pin to the members
-    # revision and its down_revision explicitly: a relative "-1" / "head" would
-    # silently target the wrong migration once later revisions stack on top.
-    command.downgrade(cfg, "ca883df3f8a5")  # members' down_revision
-    command.upgrade(cfg, "7f3a1c9d2b4e")  # the members revision
+    # Downgrade past the authentication revision that modified members.
+    command.downgrade(cfg, "a1b2c3d4e5f6")  # authentication's down_revision (loans)
+    # Re-apply the authentication migration.
+    command.upgrade(cfg, "6c92b2f9eaef")

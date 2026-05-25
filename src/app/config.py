@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     LOAN_PERIOD_DAYS: int = 14
     LOAN_MAX_ACTIVE: int = 3
 
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

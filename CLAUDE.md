@@ -98,6 +98,59 @@ Archive issue/branch/PR convention:
 - Branch: `chore/<N>-archive-<change-name>`
 - The PR syncs each delta spec into `openspec/specs/<capability>/spec.md` and moves the change directory to `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
 
+## Architecture
+
+### Slice-per-domain layout
+
+Each domain lives under `src/app/<domain>/` with three sub-packages:
+
+| Sub-package | Contents |
+|---|---|
+| `domain/` | Models, repository interface (ABC), exceptions, value objects |
+| `application/` | Service classes — orchestrate domain objects, own transactions |
+| `infrastructure/` | SQLModel repository implementation, FastAPI router |
+
+Cross-slice infrastructure imports (e.g., `sql_member_repository` importing `User`) are allowed when a foreign-key relationship requires a join. Domain layers must not import from sibling slices.
+
+`app/core/` is a leaf module — no slice imports allowed from within it.
+
+### Authentication and auth gate
+
+All routes except `GET /health`, `POST /auth/login`, and FastAPI's auto-generated documentation endpoints (`/docs`, `/redoc`, `/openapi.json`) require a valid JWT bearer token. The documentation endpoints are mounted directly on the `app` instance rather than on a router, so the `_auth_gate` dependency does not apply to them. The dependency `get_current_user` (in `app/users/infrastructure/auth_router.py`) validates the token and resolves the caller to a `User` object. Integration tests bypass this via `app.dependency_overrides[get_current_user]` in `tests/conftest.py`.
+
+Endpoints:
+- `POST /auth/login` — accepts OAuth2 form credentials, returns `{"access_token": "...", "token_type": "bearer"}`
+- `GET /auth/me` — returns the authenticated user's profile
+
+JWT settings (all required):
+
+| Variable | Description |
+|---|---|
+| `JWT_SECRET` | Signing secret — generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `JWT_ALGORITHM` | Default `HS256` |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Default `30` |
+
+### users/ slice
+
+`User` stores credentials and role for every person who can call the API. Roles: `admin`, `staff`, `member`.
+
+`UserRole` is a `StrEnum`. When read back from PostgreSQL, the value is a plain `str` — comparing with `UserRole.member` (not `.value`) works because `StrEnum.__eq__` compares by value.
+
+### members/ slice
+
+`Member` no longer holds an email column. Email is owned by the linked `User` (via `member.user_id` FK). Operations that need email (list, get, update) return `tuple[Member, str]` from the repository. `LoanService` calls `get_by_id` (no email needed) to avoid the join overhead.
+
+`POST /members` provisions a linked `member`-role `User`, sets a random initial password, and returns it once in `MemberCreateResponse.initial_password`. Subsequent reads omit it.
+
+### Test fixtures
+
+`tests/conftest.py` provides two HTTP client fixtures:
+
+| Fixture | Auth behaviour |
+|---|---|
+| `client` | Overrides `get_current_user` with a fake staff user — use for all non-auth feature tests |
+| `auth_client` | No override — use for testing real login / token validation flows |
+
 ## Language
 
 All public-facing content must be written in **English**: issues, PR titles and descriptions, commit messages, code, comments, and documentation.

@@ -26,7 +26,7 @@ class _StubSession:
     def add(self, _obj: object) -> None:
         pass
 
-    async def commit(self) -> None:
+    async def flush(self) -> None:
         raise IntegrityError("stmt", {}, self._error)
 
     async def rollback(self) -> None:

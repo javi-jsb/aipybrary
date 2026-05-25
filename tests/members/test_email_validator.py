@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.members.domain.member_model import MemberCreate, MemberUpdate
+from app.members.domain.member_model import MemberCreate
 
 
 def test_valid_email_is_accepted() -> None:
@@ -32,23 +32,3 @@ def test_email_with_whitespace_inside_is_rejected() -> None:
 def test_empty_email_is_rejected() -> None:
     with pytest.raises(ValidationError):
         MemberCreate(full_name="A", email="")
-
-
-def test_update_null_email_bypasses_validation() -> None:
-    update = MemberUpdate(email=None)
-    assert update.email is None
-
-
-def test_update_no_email_field_bypasses_validation() -> None:
-    update = MemberUpdate(full_name="A")
-    assert update.email is None
-
-
-def test_update_invalid_email_is_rejected() -> None:
-    with pytest.raises(ValidationError):
-        MemberUpdate(email="bad")
-
-
-def test_update_email_is_normalized() -> None:
-    update = MemberUpdate(email=" Bob@Example.COM ")
-    assert update.email == "bob@example.com"

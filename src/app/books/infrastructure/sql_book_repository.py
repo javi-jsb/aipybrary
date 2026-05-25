@@ -44,7 +44,7 @@ class SqlModelBookRepository(BookRepository):
         book = Book.model_validate(data)
         self._session.add(book)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, ISBN_CONSTRAINT):
@@ -95,7 +95,7 @@ class SqlModelBookRepository(BookRepository):
         book.sqlmodel_update(data.model_dump(exclude_unset=True))
         self._session.add(book)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, ISBN_CONSTRAINT):
@@ -110,7 +110,7 @@ class SqlModelBookRepository(BookRepository):
     async def delete(self, book: Book) -> None:
         await self._session.delete(book)
         try:
-            await self._session.commit()
+            await self._session.flush()
         except IntegrityError as exc:
             await self._session.rollback()
             if is_constraint_violated(exc, BOOK_FK_CONSTRAINT):

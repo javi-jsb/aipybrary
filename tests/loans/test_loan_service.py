@@ -39,11 +39,11 @@ def _make_service() -> tuple[LoanService, FakeLoanRepository, FakeMemberReposito
 
 
 def _active_member() -> Member:
-    return Member(full_name="Test User", email="test@example.com", status=MemberStatus.active)
+    return Member(full_name="Test User", user_id=uuid.uuid4(), status=MemberStatus.active)
 
 
 def _suspended_member() -> Member:
-    return Member(full_name="Suspended User", email="sus@example.com", status=MemberStatus.suspended)
+    return Member(full_name="Suspended User", user_id=uuid.uuid4(), status=MemberStatus.suspended)
 
 
 def _copy() -> BookCopy:

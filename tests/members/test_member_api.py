@@ -260,6 +260,16 @@ async def test_list_members_sort_by_status_asc(client: AsyncClient) -> None:
     assert statuses == ["active", "suspended"]
 
 
+async def test_list_members_sort_by_email_asc(client: AsyncClient) -> None:
+    await _create_member(client, full_name="Z", email="z@example.com")
+    await _create_member(client, full_name="A", email="a@example.com")
+
+    response = await client.get("/members?sort_by=email&order=asc")
+    assert response.status_code == 200
+    emails = [item["email"] for item in response.json()["items"]]
+    assert emails == sorted(emails)
+
+
 async def test_list_members_invalid_sort_by_rejected(client: AsyncClient) -> None:
     response = await client.get("/members?sort_by=invalid")
     assert response.status_code == 422
@@ -295,20 +305,6 @@ async def test_update_member_invalid_status(client: AsyncClient) -> None:
 async def test_update_member_not_found(client: AsyncClient) -> None:
     response = await client.patch(f"/members/{uuid.uuid4()}", json={"full_name": "X"})
     assert response.status_code == 404
-
-
-async def test_update_member_duplicate_email(client: AsyncClient) -> None:
-    first = await _create_member(client, email="first@example.com")
-    second = await _create_member(client, email="second@example.com")
-
-    response = await client.patch(f"/members/{second['id']}", json={"email": first["email"]})
-    assert response.status_code == 409
-
-
-async def test_update_member_invalid_email(client: AsyncClient) -> None:
-    data = await _create_member(client)
-    response = await client.patch(f"/members/{data['id']}", json={"email": "nope"})
-    assert response.status_code == 422
 
 
 # ---------------------------------------------------------------------------
