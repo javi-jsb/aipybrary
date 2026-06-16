@@ -69,6 +69,7 @@ All commands go through the Makefile — never call `uv run ...` directly.
 
 **Dev**
 - `make dev` — start the FastAPI development server on port `8077` (not the conventional `8000`, which commonly collides with Docker/Colima port forwards; `VITE_API_BASE_URL` must match)
+- `make dev-frontend` — start the frontend dev server (Vite, with HMR) from `/frontend` without leaving the repo root (runs `pnpm --dir frontend dev`; run `pnpm install` in `/frontend` once first)
 
 **Database**
 - `make db-up` — start PostgreSQL via Docker Compose

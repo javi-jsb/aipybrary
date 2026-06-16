@@ -22,6 +22,9 @@ pnpm dev
 
 The dev server prints a local URL (default `http://localhost:5173`).
 
+From the repo root you can also start it without `cd` via `make dev-frontend`
+(runs `pnpm --dir frontend dev`); `pnpm install` still needs running once.
+
 ## Configuration
 
 | Variable            | Description                                                                  |
