@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Shared Primitives
+
+## Purpose
+
+Centralize the cross-slice building blocks in `src/app/core/` — the `Entity` base class (id + timestamps), the `SortOrder` enum, the `is_constraint_violated` integrity-error helper, the `PaginatedResponse` generic envelope, and the canonical in-memory fake repositories used in tests — so slices depend on shared primitives (slices → core) instead of duplicating them.
+
+## Requirements
 
 ### Requirement: Entity base class centralizes id and timestamp fields
 The system SHALL provide an `Entity` base class in `src/app/core/entity.py` that is NOT a database table itself (`table=True` must not be set on it). It SHALL declare three fields: `id` (UUID v7, primary key), `created_at` (UTC datetime, server default `now()`), and `updated_at` (UTC datetime, server default `now()`, updated on write). All domain entity classes (`Book`, `Member`, `BookCopy`, `Loan`) SHALL inherit from `Entity` with `table=True` and SHALL NOT redeclare `id`, `created_at`, or `updated_at`.

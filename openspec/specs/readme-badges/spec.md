@@ -1,3 +1,11 @@
+# README Badges
+
+## Purpose
+
+Define the status badges shown in `README.md` that surface the project's CI and coverage health at a glance: the CI workflow status badge and the coverage badge, each linking to its source report.
+
+## Requirements
+
 ### Requirement: Workflow status badge
 `README.md` SHALL display a badge that reflects the current status of the CI workflow on `main` (passing / failing). The badge SHALL link to the Actions page for the workflow.
 

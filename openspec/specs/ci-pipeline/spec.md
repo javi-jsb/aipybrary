@@ -1,3 +1,11 @@
+# CI Pipeline
+
+## Purpose
+
+Define the GitHub Actions continuous-integration workflow that gates every push and pull request to `main`: it provisions a PostgreSQL service, verifies linting and formatting, runs the test suite with coverage, and publishes the coverage badge.
+
+## Requirements
+
 ### Requirement: Workflow triggers
 The CI workflow SHALL run on every push and pull request targeting the `main` branch.
 
