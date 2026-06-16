@@ -5,7 +5,7 @@
 
 *Built entirely with AI assistance as a personal learning and training project.*
 
-A book library REST API built with Python, FastAPI, and SQLModel, backed by PostgreSQL.
+A book library application: a Python/FastAPI/SQLModel REST API (backed by PostgreSQL) plus a React + TypeScript + Tailwind single-page frontend under `/frontend`.
 
 ## Quick start
 
@@ -13,6 +13,7 @@ A book library REST API built with Python, FastAPI, and SQLModel, backed by Post
 
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - [Docker](https://docs.docker.com/get-docker/) with Compose (either the `docker compose` plugin or the `docker-compose` standalone binary)
+- [Node.js](https://nodejs.org/) + [pnpm](https://pnpm.io/) — only for the `/frontend` SPA
 
 ### Setup
 
@@ -29,6 +30,8 @@ cp .env.example .env
 
 ### Run
 
+**Backend** (API on `:8077`):
+
 ```bash
 make db-up       # start Postgres
 make db-migrate  # apply database migrations
@@ -39,6 +42,15 @@ make dev         # start the FastAPI dev server (hot reload)
 curl http://localhost:8077/health
 # => {"status":"ok"}
 ```
+
+**Frontend** (Vite dev server on `:5173`):
+
+```bash
+pnpm --dir frontend install   # first time only
+make dev-frontend             # start the SPA (calls the API at :8077)
+```
+
+See `frontend/README.md` for frontend details and the `VITE_API_BASE_URL` setting.
 
 ### Tests and linting
 
@@ -51,7 +63,9 @@ make format      # fix formatting
 
 ## Architecture
 
-Each domain (e.g. `books`) follows a lightweight DDD layering:
+The backend lives at the repo root; the browser SPA is a self-contained app under `/frontend` (React + TS + Tailwind via Vite) that calls the API through a shared `apiClient`.
+
+On the backend, each domain (e.g. `books`) follows a lightweight DDD layering:
 
 - **domain** — entities, value objects, and the abstract repository interface
 - **application** — use-case services that orchestrate domain logic
@@ -60,4 +74,5 @@ Each domain (e.g. `books`) follows a lightweight DDD layering:
 ## Documentation
 
 - `CLAUDE.md` — tech stack, commit conventions, branch naming, PR rules, dependency policy
+- `frontend/README.md` — frontend setup, stack, and commands
 - `openspec/changes/<change-name>/` — proposals, designs, specs, and tasks for each change
