@@ -1,5 +1,7 @@
+from typing import Annotated
+
 from pydantic import computed_field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -26,7 +28,11 @@ class Settings(BaseSettings):
     # Cross-origin requests allowed by the API. Defaults to the Vite dev server origin
     # so the frontend SPA can call the API directly. Set as a comma-separated list in
     # the environment to add more origins without code changes.
-    CORS_ALLOW_ORIGINS: list[str] = ["http://localhost:5173"]
+    #
+    # NoDecode disables pydantic-settings' default JSON decoding of complex-typed
+    # env values; without it a comma-separated string raises a SettingsError before
+    # the validator below ever runs, and only the JSON-array form would be accepted.
+    CORS_ALLOW_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
     @field_validator("CORS_ALLOW_ORIGINS", mode="before")
     @classmethod

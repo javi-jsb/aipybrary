@@ -1,3 +1,4 @@
+import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.config import Settings, settings
@@ -45,4 +46,12 @@ async def test_disallowed_origin_gets_no_cors_header() -> None:
 
 def test_cors_origins_parsed_from_comma_separated_string() -> None:
     parsed = Settings(CORS_ALLOW_ORIGINS="http://a.example, http://b.example ,")
+    assert parsed.CORS_ALLOW_ORIGINS == ["http://a.example", "http://b.example"]
+
+
+def test_cors_origins_parsed_from_comma_separated_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The env path JSON-decodes complex fields before validators run, so a plain
+    # comma-separated value must still parse (regression guard for that decoding).
+    monkeypatch.setenv("CORS_ALLOW_ORIGINS", "http://a.example, http://b.example ,")
+    parsed = Settings()
     assert parsed.CORS_ALLOW_ORIGINS == ["http://a.example", "http://b.example"]
