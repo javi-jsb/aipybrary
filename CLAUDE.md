@@ -130,6 +130,14 @@ JWT settings (all required):
 | `JWT_ALGORITHM` | Default `HS256` |
 | `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Default `30` |
 
+### CORS
+
+The frontend SPA calls the API directly cross-origin (browser at the Vite dev origin → FastAPI at `http://localhost:8000`), so `CORSMiddleware` is registered in `app/main.py`. Allowed origins come from the `CORS_ALLOW_ORIGINS` setting (comma-separated env var, defaults to `http://localhost:5173`), so new origins are added by configuration, not code. All methods and headers are allowed — this covers the `Authorization` bearer header and the login request. This is **dev-origin CORS only**; production hardening (locked-down origins, credentials policy) is out of scope.
+
+| Variable | Description |
+|---|---|
+| `CORS_ALLOW_ORIGINS` | Comma-separated list of allowed origins. Default `http://localhost:5173` |
+
 ### users/ slice
 
 `User` stores credentials and role for every person who can call the API. Roles: `admin`, `staff`, `member`.
