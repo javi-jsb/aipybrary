@@ -1,4 +1,4 @@
-from pydantic import computed_field
+from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,18 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Cross-origin requests allowed by the API. Defaults to the Vite dev server origin
+    # so the frontend SPA can call the API directly. Set as a comma-separated list in
+    # the environment to add more origins without code changes.
+    CORS_ALLOW_ORIGINS: list[str] = ["http://localhost:5173"]
+
+    @field_validator("CORS_ALLOW_ORIGINS", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
 
     @computed_field  # type: ignore[prop-decorator]
     @property
