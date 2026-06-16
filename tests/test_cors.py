@@ -1,6 +1,6 @@
 from httpx import ASGITransport, AsyncClient
 
-from app.config import settings
+from app.config import Settings, settings
 from app.main import app
 
 ALLOWED_ORIGIN = settings.CORS_ALLOW_ORIGINS[0]
@@ -41,3 +41,8 @@ async def test_disallowed_origin_gets_no_cors_header() -> None:
 
     assert response.status_code == 200
     assert "access-control-allow-origin" not in response.headers
+
+
+def test_cors_origins_parsed_from_comma_separated_string() -> None:
+    parsed = Settings(CORS_ALLOW_ORIGINS="http://a.example, http://b.example ,")
+    assert parsed.CORS_ALLOW_ORIGINS == ["http://a.example", "http://b.example"]
