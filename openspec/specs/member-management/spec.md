@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide CRUD operations for the Member entity — library patrons who can borrow books. This includes the domain model, email validation and normalization, repository abstraction, application service, paginated/filterable/sortable HTTP endpoints, the member lifecycle status, and the database migration for the members table.
+Provide CRUD operations for the Member entity — library patrons who can borrow books. This includes the domain model and its 1:1 link to a `User` (which owns the member's email — see the `authentication` capability), repository abstraction, application service, paginated/filterable/sortable HTTP endpoints, the member lifecycle status, and the database migration for the members table.
 
 ## Requirements
 
@@ -14,56 +14,31 @@ The application SHALL define a `Member` entity as a SQLModel table class with th
 |---|---|---|
 | `id` | `uuid.UUID` | PK, default UUIDv7 via `uuid_utils.uuid7()` |
 | `full_name` | `str` | Required, max 300 chars |
-| `email` | `str` | Required, max 320 chars, unique (constraint `uq_members_email`), valid format, normalized |
 | `status` | `MemberStatus` | Required, enum `active` / `suspended`, default `active` |
+| `user_id` | `uuid.UUID` | Required, unique, FK to `users.id` |
 | `created_at` | `datetime` | Server-default `now()`, not client-updatable |
 | `updated_at` | `datetime` | Server-default `now()`, auto-updated on modification |
 
+A `Member` SHALL NOT carry its own `email` column — a member's email is the `email` of its linked `User` (see the `authentication` capability). Every `Member` SHALL be linked 1:1 to exactly one `User` whose `role` is `member`; the `unique` constraint on `user_id` enforces the 1:1 link.
+
 `MemberStatus` SHALL be a `StrEnum` with members `active` and `suspended`, mirroring the `StrEnum` pattern used by the `books` slice.
 
-The model SHALL also define separate Pydantic schemas for API boundaries: `MemberCreate`, `MemberUpdate`, and `MemberPublic`, plus a `MemberListResponse` paginated envelope consistent with `BookListResponse` (`items`, `total`, `page`, `size`, and a computed `pages`).
+The model SHALL also define separate Pydantic schemas for API boundaries: `MemberCreate`, `MemberUpdate`, and `MemberPublic`, plus a `MemberListResponse` paginated envelope consistent with `BookListResponse` (`items`, `total`, `page`, `size`, and a computed `pages`). `MemberPublic` SHALL expose the member's `email`, sourced from the linked `User`.
 
 #### Scenario: Member is created with required fields
 
-- **WHEN** a Member is instantiated with `full_name` and `email`
-- **THEN** it receives a UUIDv7 `id`, `status` defaults to `active`, and `created_at` and `updated_at` are set automatically
+- **WHEN** a `Member` is created with `full_name` and a linked `User`
+- **THEN** it receives a UUIDv7 `id`, `status` defaults to `active`, `user_id` references the linked `User`, and `created_at` and `updated_at` are set automatically
 
-#### Scenario: Email uniqueness is enforced
+#### Scenario: Member is linked 1:1 to a user
 
-- **WHEN** two members are created with the same `email`
+- **WHEN** two members are created referencing the same `user_id`
 - **THEN** the database rejects the second insert with a unique constraint violation
 
 #### Scenario: Status defaults to active
 
-- **WHEN** a Member is created without an explicit `status`
+- **WHEN** a `Member` is created without an explicit `status`
 - **THEN** its `status` is `active`
-
-### Requirement: Email validation and normalization
-
-`MemberCreate` and `MemberUpdate` SHALL validate and normalize the `email`
-field at the schema boundary, mirroring the `isbn` validator pattern in the
-`books` slice: the value is trimmed and lowercased, then rejected if it does
-not match a basic `local@domain.tld` shape (no whitespace, exactly one `@`, a
-dotted domain). A `None` email on `MemberUpdate` bypasses validation.
-
-Because the value is lowercased before persistence, the `email` uniqueness
-constraint is effectively case-insensitive.
-
-#### Scenario: Invalid email rejected
-
-- **WHEN** a client sends `POST /members` or `PATCH /members/{member_id}` with an `email` that is not a valid address (e.g. `not-an-email`)
-- **THEN** the response status code is `422`
-
-#### Scenario: Email is normalized
-
-- **WHEN** a client sends `POST /members` with `email` `"  Ada@Example.COM  "`
-- **THEN** the created member's `email` is `ada@example.com`
-
-#### Scenario: Duplicate email is detected case-insensitively
-
-- **WHEN** a member with `email` `case@example.com` exists
-- **AND** a client sends `POST /members` with `email` `CASE@example.com`
-- **THEN** the response status code is `409`
 
 ### Requirement: Member repository abstraction
 
@@ -216,13 +191,18 @@ The API SHALL expose `GET /members/{member_id}` that returns a single member.
 
 ### Requirement: Create a member
 
-The API SHALL expose `POST /members` that creates a new member from a `MemberCreate` payload. `MemberCreate` SHALL accept `full_name`, `email`, and an optional `status` (defaulting to `active`).
+The API SHALL expose `POST /members` that creates a new member from a `MemberCreate` payload. `MemberCreate` SHALL accept `full_name`, `email`, and an optional `status` (defaulting to `active`); it SHALL NOT accept a password.
+
+Because every `Member` is linked 1:1 to a `User`, `POST /members` SHALL — in a single operation — create a `member`-role `User` for the given `email` and a `Member` linked to it. The `email` SHALL be validated and normalized per the `User` email rules (see the `authentication` capability). The system SHALL generate a random initial password for the new `User`, store only its hash, and return the generated plaintext password exactly once in the creation response so it can be relayed to the member.
+
+The creation response SHALL include the created member's public fields and a one-time `initial_password`; the `initial_password` SHALL NOT be retrievable by any subsequent request.
 
 #### Scenario: Valid creation
 
 - **WHEN** a client sends `POST /members` with a valid JSON body containing `full_name` and `email`
 - **THEN** the response status code is `201`
-- **AND** the response body is the created `MemberPublic` object with a generated `id` and `status` `active`
+- **AND** a `member`-role `User` is created for the `email` and a `Member` linked to it
+- **AND** the response body contains the created member (with `status` `active`) and a non-empty one-time `initial_password`
 
 #### Scenario: Missing required fields
 
@@ -231,8 +211,9 @@ The API SHALL expose `POST /members` that creates a new member from a `MemberCre
 
 #### Scenario: Duplicate email rejected
 
-- **WHEN** a client sends `POST /members` with an `email` that already exists
+- **WHEN** a client sends `POST /members` with an `email` already used by an existing `User`
 - **THEN** the response status code is `409`
+- **AND** no `Member` or `User` is created
 
 ### Requirement: Update a member
 
@@ -287,15 +268,15 @@ The `Member` entity SHALL carry a `status` field with values `active` or `suspen
 
 ### Requirement: Members table migration
 
-The members table SHALL be created and managed via an Alembic migration, not via `SQLModel.metadata.create_all()`. The migration SHALL include the unique constraint on `email`, explicitly named `uq_members_email` so the SQL repository can distinguish an email collision from any other integrity violation.
+The `members` table SHALL be created and managed via Alembic migrations, not via `SQLModel.metadata.create_all()`. After the `authentication` change the `members` table SHALL have a `user_id` column — a `NOT NULL`, `UNIQUE` foreign key to `users.id` — and SHALL NOT have an `email` column or the `uq_members_email` constraint; a member's email is an attribute of the linked `User`.
 
-#### Scenario: Migration creates the table
+#### Scenario: Migration applies the members schema
 
-- **WHEN** a developer runs `alembic upgrade head` on a database without the `members` table
-- **THEN** the `members` table exists with all columns matching the `Member` model and a unique constraint on `email`
+- **WHEN** a developer runs `alembic upgrade head`
+- **THEN** the `members` table exists with columns matching the `Member` model, including a `NOT NULL` unique `user_id` foreign key to `users.id`, and no `email` column
 
 #### Scenario: Migration is reversible
 
-- **WHEN** a developer downgrades the members revision after applying it
-- **THEN** the `members` table is dropped
-- **AND** re-applying the members revision recreates it
+- **WHEN** a developer downgrades the `authentication` revision after applying it
+- **THEN** the `members` table returns to its previous schema — with `email` and without `user_id`
+- **AND** re-applying the revision reapplies the new schema
