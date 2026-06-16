@@ -159,6 +159,54 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 | `client` | Overrides `get_current_user` with a fake staff user — use for all non-auth feature tests |
 | `auth_client` | No override — use for testing real login / token validation flows |
 
+## Frontend
+
+A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API; it currently proves one vertical slice — log in, hold a JWT, render a protected Books list.
+
+### Stack
+
+| Layer | Choice |
+|---|---|
+| Language | TypeScript |
+| Framework | React 19 |
+| Build / dev server | Vite (HMR) |
+| Styling | Tailwind CSS (via the `@tailwindcss/vite` plugin) |
+| Package manager | pnpm |
+| Linting & formatting | ESLint + Prettier |
+
+The Node toolchain is fully isolated under `/frontend` — independent of the Python `pyproject.toml`. `pnpm-lock.yaml` is committed (the analog of `uv.lock`); `frontend/node_modules` and `frontend/dist` are gitignored.
+
+### Layout
+
+```
+frontend/src/
+  api/         apiClient wrapper, hand-written types, typed call functions (auth, books)
+  auth/        tokenStore (storage seam) + AuthContext/AuthProvider (auth state)
+  components/  LoginScreen, BooksList
+  App.tsx      auth gating: LoginScreen vs. BooksList
+  main.tsx     entry point
+```
+
+All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. This is the seam where a generated client or TanStack Query slots in later without touching screens. Types for `Book` and the auth payloads are hand-written for now (generating from OpenAPI is deferred).
+
+The token lives behind `src/auth/tokenStore.ts` so the storage mechanism can be hardened without touching call sites. The frontend calls the API **directly cross-origin** (no Vite proxy), relying on backend CORS (see the CORS section).
+
+### Commands
+
+Run from `/frontend` (the Makefile is backend-only):
+
+| Command | Description |
+|---|---|
+| `pnpm install` | Install dependencies |
+| `pnpm dev` | Start the Vite dev server with HMR |
+| `pnpm build` | Type-check (`tsc -b`) and produce a production build |
+| `pnpm lint` | Run ESLint |
+| `pnpm format` / `pnpm format:check` | Format / verify formatting with Prettier |
+
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | Base URL of the backend API. Default `http://localhost:8000` |
+
 ## Language
 
 All public-facing content must be written in **English**: issues, PR titles and descriptions, commit messages, code, comments, and documentation.
