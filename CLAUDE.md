@@ -112,7 +112,7 @@ Each domain lives under `src/app/<domain>/` with three sub-packages:
 
 Cross-slice infrastructure imports (e.g., `sql_member_repository` importing `User`) are allowed when a foreign-key relationship requires a join. Domain layers must not import from sibling slices.
 
-`app/core/` is a leaf module — no slice imports allowed from within it.
+`app/core/` is a leaf module — no slice imports allowed from within it. Shared field-validation rules that any slice's DTOs may need (e.g. `validate_email` in `app/core/validators.py`) live here so the rule has a single owner and cannot diverge between slices.
 
 ### Authentication and auth gate
 
