@@ -133,7 +133,7 @@ JWT settings (all required):
 
 ### CORS
 
-The frontend SPA calls the API directly cross-origin (browser at the Vite dev origin → FastAPI at `http://localhost:8077`), so `CORSMiddleware` is registered in `app/main.py`. Allowed origins come from the `CORS_ALLOW_ORIGINS` setting (comma-separated env var, defaults to `http://localhost:5173`), so new origins are added by configuration, not code. All methods and headers are allowed — this covers the `Authorization` bearer header and the login request. This is **dev-origin CORS only**; production hardening (locked-down origins, credentials policy) is out of scope.
+The frontend SPA calls the API directly cross-origin (browser at the Vite dev origin → FastAPI at `http://localhost:8077`), so `CORSMiddleware` is registered in `app/main.py`. Allowed origins come from the `CORS_ALLOW_ORIGINS` setting (comma-separated env var, defaults to `http://localhost:5173` and `http://127.0.0.1:5173` — distinct origins for the browser), so new origins are added by configuration, not code. All methods and headers are allowed — this covers the `Authorization` bearer header and the login request. This is **dev-origin CORS only**; production hardening (locked-down origins, credentials policy) is out of scope.
 
 | Variable | Description |
 |---|---|

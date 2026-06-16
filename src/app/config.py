@@ -26,13 +26,18 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # Cross-origin requests allowed by the API. Defaults to the Vite dev server origin
-    # so the frontend SPA can call the API directly. Set as a comma-separated list in
-    # the environment to add more origins without code changes.
+    # under both hostnames the browser may use (localhost and 127.0.0.1 are distinct
+    # origins for CORS), so the frontend SPA can call the API directly regardless of
+    # which one it is opened with. Set as a comma-separated list in the environment to
+    # add more origins without code changes.
     #
     # NoDecode disables pydantic-settings' default JSON decoding of complex-typed
     # env values; without it a comma-separated string raises a SettingsError before
     # the validator below ever runs, and only the JSON-array form would be accepted.
-    CORS_ALLOW_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    CORS_ALLOW_ORIGINS: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
     @field_validator("CORS_ALLOW_ORIGINS", mode="before")
     @classmethod
