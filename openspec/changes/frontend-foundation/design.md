@@ -31,7 +31,7 @@ Vite provides the dev server (HMR) and the production bundler. pnpm is the packa
 All calls go through one helper that prepends the base URL, attaches the bearer token, parses JSON, and throws on non-success. **Alternative considered:** TanStack Query from the start — deferred. Starting with `fetch` keeps the mechanism visible and avoids a second abstraction to learn; the wrapper is the seam where TanStack Query or a generated client slots in later without touching screens.
 
 ### Cross-origin — direct calls, no Vite proxy
-The frontend calls the API directly at the `VITE_API_BASE_URL` origin (default `http://localhost:8000`). This assumes CORS is enabled on the backend, handled by a separate backend change landed before frontend implementation. **Alternative considered:** Vite dev proxy (same-origin, no CORS needed) — rejected per product decision to model the real deployed cross-origin setup rather than hide it behind a dev-only proxy.
+The frontend calls the API directly at the `VITE_API_BASE_URL` origin (default `http://localhost:8077`). This assumes CORS is enabled on the backend, handled by a separate backend change landed before frontend implementation. **Alternative considered:** Vite dev proxy (same-origin, no CORS needed) — rejected per product decision to model the real deployed cross-origin setup rather than hide it behind a dev-only proxy.
 
 ### Types — hand-written for now
 `Book` and auth payload types are written by hand. **Alternative considered:** generating types from `/openapi.json` — deferred to a future iteration once the manual baseline is understood. The `apiClient` seam keeps the later switch cheap.

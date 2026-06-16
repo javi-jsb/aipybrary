@@ -68,7 +68,7 @@ Pinning policy:
 All commands go through the Makefile — never call `uv run ...` directly.
 
 **Dev**
-- `make dev` — start the FastAPI development server
+- `make dev` — start the FastAPI development server on port `8077` (not the conventional `8000`, which commonly collides with Docker/Colima port forwards; `VITE_API_BASE_URL` must match)
 
 **Database**
 - `make db-up` — start PostgreSQL via Docker Compose
@@ -132,7 +132,7 @@ JWT settings (all required):
 
 ### CORS
 
-The frontend SPA calls the API directly cross-origin (browser at the Vite dev origin → FastAPI at `http://localhost:8000`), so `CORSMiddleware` is registered in `app/main.py`. Allowed origins come from the `CORS_ALLOW_ORIGINS` setting (comma-separated env var, defaults to `http://localhost:5173`), so new origins are added by configuration, not code. All methods and headers are allowed — this covers the `Authorization` bearer header and the login request. This is **dev-origin CORS only**; production hardening (locked-down origins, credentials policy) is out of scope.
+The frontend SPA calls the API directly cross-origin (browser at the Vite dev origin → FastAPI at `http://localhost:8077`), so `CORSMiddleware` is registered in `app/main.py`. Allowed origins come from the `CORS_ALLOW_ORIGINS` setting (comma-separated env var, defaults to `http://localhost:5173`), so new origins are added by configuration, not code. All methods and headers are allowed — this covers the `Authorization` bearer header and the login request. This is **dev-origin CORS only**; production hardening (locked-down origins, credentials policy) is out of scope.
 
 | Variable | Description |
 |---|---|
@@ -205,7 +205,7 @@ Run from `/frontend` (the Makefile is backend-only):
 
 | Variable | Description |
 |---|---|
-| `VITE_API_BASE_URL` | Base URL of the backend API. Default `http://localhost:8000` |
+| `VITE_API_BASE_URL` | Base URL of the backend API. Default `http://localhost:8077` |
 
 ## Language
 

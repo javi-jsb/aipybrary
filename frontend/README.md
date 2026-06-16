@@ -16,7 +16,7 @@ against the backend, holds the returned JWT, and renders a protected Books list.
 ```bash
 cd frontend
 pnpm install
-cp .env.example .env   # adjust VITE_API_BASE_URL if your backend isn't on :8000
+cp .env.example .env   # adjust VITE_API_BASE_URL if your backend isn't on :8077
 pnpm dev
 ```
 
@@ -26,7 +26,7 @@ The dev server prints a local URL (default `http://localhost:5173`).
 
 | Variable            | Description                                                                  |
 | ------------------- | ---------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL` | Base URL of the backend API. Defaults to `http://localhost:8000` when unset. |
+| `VITE_API_BASE_URL` | Base URL of the backend API. Defaults to `http://localhost:8077` when unset. |
 
 The frontend calls the API **directly cross-origin**, so the backend must have
 CORS enabled for this origin (the dev origin is allowed by default; see the root

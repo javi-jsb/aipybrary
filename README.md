@@ -36,7 +36,7 @@ make db-seed     # (optional) seed development data
 make dev         # start the FastAPI dev server (hot reload)
 
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8077/health
 # => {"status":"ok"}
 ```
 

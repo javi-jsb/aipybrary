@@ -10,7 +10,7 @@ Exercising the API today relies on FastAPI's `/docs`, which is increasingly tedi
 - Add a login screen that posts OAuth2 form credentials to `POST /auth/login`, stores the returned `access_token`, and reflects authenticated state.
 - Add one protected screen: a Books list rendering real data from `GET /books` using the stored token.
 - Update root `CLAUDE.md` with a frontend section (stack, layout, commands).
-- The frontend calls the backend directly cross-origin at `http://localhost:8000`. This assumes CORS is already enabled on the API (handled by a separate backend change done before frontend implementation). No Vite dev proxy is used.
+- The frontend calls the backend directly cross-origin at `http://localhost:8077`. This assumes CORS is already enabled on the API (handled by a separate backend change done before frontend implementation). No Vite dev proxy is used.
 
 Out of scope (future changes): members/copies/loans screens, create/borrow/return actions, OpenAPI-generated types, TanStack Query, a dedicated frontend CI job, and production deployment/CORS hardening.
 
@@ -28,4 +28,4 @@ Out of scope (future changes): members/copies/loans screens, create/borrow/retur
 - **New dependencies**: Node.js toolchain (pnpm, Vite, React, TypeScript, Tailwind, eslint/prettier) — isolated to `/frontend`, independent of the Python `pyproject.toml`.
 - **Docs**: root `CLAUDE.md` gains a frontend section.
 - **Backend**: untouched by this change. Depends on a separate backend change enabling CORS for the dev origin before this frontend is implemented.
-- **Runtime assumption**: the API is reachable at `http://localhost:8000` with CORS enabled; the frontend base URL is configurable via a Vite env var (`VITE_API_BASE_URL`).
+- **Runtime assumption**: the API is reachable at `http://localhost:8077` with CORS enabled; the frontend base URL is configurable via a Vite env var (`VITE_API_BASE_URL`).

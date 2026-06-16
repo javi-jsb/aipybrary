@@ -4,7 +4,7 @@
 - [x] 1.2 Add and configure Tailwind (config + base stylesheet wired into the app entry)
 - [x] 1.3 Add eslint + prettier configuration consistent with a TS React project
 - [x] 1.4 Add a `.gitignore` entry for `frontend/node_modules` (and Vite build output)
-- [x] 1.5 Add `VITE_API_BASE_URL` support (`.env.example` documenting it, default `http://localhost:8000`)
+- [x] 1.5 Add `VITE_API_BASE_URL` support (`.env.example` documenting it, default `http://localhost:8077`)
 - [x] 1.6 Verify `pnpm dev` serves the app locally with HMR
 
 ## 2. API client layer

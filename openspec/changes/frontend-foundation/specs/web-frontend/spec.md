@@ -12,7 +12,7 @@ The system SHALL provide a browser-based single-page application, built with Rea
 #### Scenario: API base URL is configurable
 
 - **WHEN** the application issues a request to the backend
-- **THEN** it targets the base URL from the `VITE_API_BASE_URL` environment variable, defaulting to `http://localhost:8000` when unset
+- **THEN** it targets the base URL from the `VITE_API_BASE_URL` environment variable, defaulting to `http://localhost:8077` when unset
 
 ### Requirement: Shared API client
 

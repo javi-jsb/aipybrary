@@ -3,7 +3,7 @@
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
-	uv run fastapi dev
+	uv run fastapi dev --port 8077
 
 ##@ Database
 db-up: ## Start PostgreSQL via Docker
