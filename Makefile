@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev db-migrate db-seed test coverage check format db-up db-down
+.PHONY: help dev db-migrate db-seed test coverage check format db-up db-down db-down-clean
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
@@ -11,6 +11,9 @@ db-up: ## Start PostgreSQL via Docker
 
 db-down: ## Stop and remove the Docker containers
 	docker compose down
+
+db-down-clean: ## Stop and remove the Docker containers and volumes
+	docker compose down -v
 
 db-migrate: ## Apply Alembic migrations (upgrade head)
 	uv run alembic upgrade head
