@@ -204,6 +204,14 @@ Run pnpm scripts from `/frontend` (`pnpm install`, `dev`, `build`, `typecheck`, 
 
 The Node toolchain is fully isolated under `/frontend` — independent of the Python `pyproject.toml`. `pnpm-lock.yaml` is committed (the analog of `uv.lock`); `frontend/node_modules`, `frontend/dist`, and `frontend/coverage` are gitignored.
 
+Pinning policy (the frontend analog of the backend's; keep the two aligned):
+
+- All direct dependencies in `package.json` use exact version pins (`"package": "X.Y.Z"`, no `^`/`~`), both runtime and dev
+- `pnpm-lock.yaml` is committed; it pins transitive dependencies and integrity hashes
+- Upgrades are deliberate: `pnpm add package@X.Y.Z` or edit `package.json` and run `pnpm install`
+- Every PR that modifies `package.json` or `pnpm-lock.yaml` must have its dependency diff reviewed explicitly before merge
+- In automated environments (CI, prod, once they exist), use `pnpm install --frozen-lockfile` so resolution is forbidden
+
 ### Testing
 
 Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. Test files sit next to the code they cover (`*.test.ts` / `*.test.tsx`); shared helpers live in `src/test/` (`setup.ts` wires jest-dom matchers and per-test cleanup; `utils.tsx` provides `renderWithAuth`, a `jsonResponse` builder, and a `makeBook` factory). Vitest globals are **off** — import `describe`/`it`/`expect`/`vi` explicitly.
