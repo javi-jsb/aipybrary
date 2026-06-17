@@ -58,13 +58,38 @@ describe("BookForm — create", () => {
 
     await user.type(screen.getByLabelText("Title"), "Dune");
     await user.type(screen.getByLabelText("Author"), "Frank Herbert");
-    await user.type(screen.getByLabelText("ISBN"), "9780000000000");
+    // A valid ISBN-13 that passes client validation so the request reaches the
+    // backend, which rejects it as a duplicate.
+    await user.type(screen.getByLabelText("ISBN"), "9780060934347");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ISBN already registered");
     expect(screen.queryByText("Books list")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveValue("Dune");
-    expect(screen.getByLabelText("ISBN")).toHaveValue("9780000000000");
+    expect(screen.getByLabelText("ISBN")).toHaveValue("9780060934347");
+  });
+
+  it("blocks submission on an invalid ISBN without calling the API", async () => {
+    const user = userEvent.setup();
+    renderForm(["/books/new"]);
+
+    await user.type(screen.getByLabelText("Title"), "Dune");
+    await user.type(screen.getByLabelText("Author"), "Frank Herbert");
+    await user.type(screen.getByLabelText("ISBN"), "1234567890");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText(/Invalid ISBN-10 checksum/)).toBeInTheDocument();
+    // No 422 round-trip: the form short-circuited before any request.
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByText("Books list")).not.toBeInTheDocument();
+
+    // Fixing the field clears the error and lets the request through.
+    await user.clear(screen.getByLabelText("ISBN"));
+    fetchMock.mockResolvedValue(jsonResponse(makeBook(), 201));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Books list")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

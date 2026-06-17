@@ -4,24 +4,14 @@ import { Link, useNavigate, useParams } from "react-router";
 import { createBook, getBook, updateBook } from "../api/books";
 import { apiErrorToFormMessage } from "../api/errors";
 import type { Book, BookCreate } from "../api/types";
+import {
+  EMPTY_BOOK_FORM_VALUES,
+  validateBookForm,
+  type BookFieldErrors,
+  type BookFormValues,
+} from "./bookValidation";
 
-interface FormValues {
-  title: string;
-  author: string;
-  isbn: string;
-  publicationYear: string;
-  synopsis: string;
-}
-
-const EMPTY_VALUES: FormValues = {
-  title: "",
-  author: "",
-  isbn: "",
-  publicationYear: "",
-  synopsis: "",
-};
-
-function toFormValues(book: Book): FormValues {
+function toFormValues(book: Book): BookFormValues {
   return {
     title: book.title,
     author: book.author,
@@ -33,7 +23,7 @@ function toFormValues(book: Book): FormValues {
 
 /** Trim text fields and collapse blanks to `null`, so an edit clears a value
  * rather than sending an empty string the backend would reject. */
-function toPayload(values: FormValues): BookCreate {
+function toPayload(values: BookFormValues): BookCreate {
   const isbn = values.isbn.trim();
   const year = values.publicationYear.trim();
   const synopsis = values.synopsis.trim();
@@ -49,18 +39,37 @@ function toPayload(values: FormValues): BookCreate {
 const inputClass =
   "w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-slate-500 focus:outline-none";
 
+/** Input classes, switching to a red border when the field has a validation error. */
+function fieldClass(error: string | undefined): string {
+  return error
+    ? inputClass
+        .replace("border-slate-300", "border-red-400")
+        .replace("focus:border-slate-500", "focus:border-red-500")
+    : inputClass;
+}
+
+function FieldError({ id, message }: { id: string; message: string | undefined }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="alert" className="text-sm text-red-600">
+      {message}
+    </p>
+  );
+}
+
 interface FieldsProps {
   /** Present in edit mode; drives PATCH vs POST. */
   bookId?: string;
-  initial: FormValues;
+  initial: BookFormValues;
 }
 
 function BookFormFields({ bookId, initial }: FieldsProps) {
   const isEdit = bookId !== undefined;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [values, setValues] = useState<FormValues>(initial);
+  const [values, setValues] = useState<BookFormValues>(initial);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<BookFieldErrors>({});
 
   const mutation = useMutation({
     mutationFn: (payload: BookCreate) =>
@@ -74,13 +83,23 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
     onError: (err) => setError(apiErrorToFormMessage(err)),
   });
 
-  function update<K extends keyof FormValues>(key: K, value: string) {
+  function update<K extends keyof BookFormValues>(key: K, value: string) {
     setValues((prev) => ({ ...prev, [key]: value }));
+    // Clear a field's error as the user edits it, so stale messages don't linger.
+    setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    // Validate client-side first so invalid input never costs a 422 round-trip.
+    const errors = validateBookForm(values);
+    if (Object.values(errors).some(Boolean)) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     mutation.mutate(toPayload(values));
   }
 
@@ -90,18 +109,20 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
         {isEdit ? "Edit book" : "New book"}
       </h1>
 
-      <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="max-w-lg space-y-4">
         <div className="space-y-1">
           <label htmlFor="title" className="block text-sm font-medium text-slate-700">
             Title
           </label>
           <input
             id="title"
-            required
             value={values.title}
             onChange={(e) => update("title", e.target.value)}
-            className={inputClass}
+            aria-invalid={fieldErrors.title !== undefined}
+            aria-describedby={fieldErrors.title ? "title-error" : undefined}
+            className={fieldClass(fieldErrors.title)}
           />
+          <FieldError id="title-error" message={fieldErrors.title} />
         </div>
 
         <div className="space-y-1">
@@ -110,11 +131,13 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
           </label>
           <input
             id="author"
-            required
             value={values.author}
             onChange={(e) => update("author", e.target.value)}
-            className={inputClass}
+            aria-invalid={fieldErrors.author !== undefined}
+            aria-describedby={fieldErrors.author ? "author-error" : undefined}
+            className={fieldClass(fieldErrors.author)}
           />
+          <FieldError id="author-error" message={fieldErrors.author} />
         </div>
 
         <div className="space-y-1">
@@ -125,8 +148,11 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
             id="isbn"
             value={values.isbn}
             onChange={(e) => update("isbn", e.target.value)}
-            className={inputClass}
+            aria-invalid={fieldErrors.isbn !== undefined}
+            aria-describedby={fieldErrors.isbn ? "isbn-error" : undefined}
+            className={fieldClass(fieldErrors.isbn)}
           />
+          <FieldError id="isbn-error" message={fieldErrors.isbn} />
         </div>
 
         <div className="space-y-1">
@@ -136,10 +162,14 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
           <input
             id="publicationYear"
             type="number"
+            step="1"
             value={values.publicationYear}
             onChange={(e) => update("publicationYear", e.target.value)}
-            className={inputClass}
+            aria-invalid={fieldErrors.publicationYear !== undefined}
+            aria-describedby={fieldErrors.publicationYear ? "publicationYear-error" : undefined}
+            className={fieldClass(fieldErrors.publicationYear)}
           />
+          <FieldError id="publicationYear-error" message={fieldErrors.publicationYear} />
         </div>
 
         <div className="space-y-1">
@@ -194,7 +224,7 @@ export function BookForm() {
   });
 
   if (id === undefined) {
-    return <BookFormFields initial={EMPTY_VALUES} />;
+    return <BookFormFields initial={EMPTY_BOOK_FORM_VALUES} />;
   }
 
   if (book.isPending) {
