@@ -17,6 +17,7 @@
 - [x] 2.4 Book edit form (`PATCH`), reflecting updated values after success
 - [x] 2.5 Book delete action with confirmation; handle the "has copies" conflict
 - [x] 2.6 Gate create/edit/delete controls by role
+- [x] 2.7 Validate book fields client-side (required, lengths, ISBN checksum, integer year) to prevent avoidable `422`s
 
 ## 3. Members
 

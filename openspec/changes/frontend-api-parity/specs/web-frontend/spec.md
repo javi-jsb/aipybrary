@@ -135,3 +135,17 @@ The system SHALL surface backend error responses on the originating form, presen
 
 - **WHEN** a create or update submission is rejected by the backend with a validation or conflict error
 - **THEN** the application shows the returned error message on the form and preserves the user's input
+
+### Requirement: Client-side form validation
+
+The system SHALL validate form input against the backend's known field constraints before submitting, and SHALL NOT issue the request when the input is invalid — presenting per-field messages instead. This avoids predictable `422` responses. Conflicts that are not knowable on the client (e.g. a duplicate ISBN, `409`) are still surfaced from the server response per the *Consistent form error handling* requirement.
+
+#### Scenario: Invalid input is rejected before submission
+
+- **WHEN** a form field violates a known backend constraint (e.g. a malformed ISBN or a non-integer publication year)
+- **THEN** the application shows a field-level error, preserves the input, and does not send the request
+
+#### Scenario: Corrected input is submitted
+
+- **WHEN** the user corrects the invalid field and resubmits
+- **THEN** the field error clears and the application sends the request

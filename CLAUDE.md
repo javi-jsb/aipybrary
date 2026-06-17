@@ -202,6 +202,8 @@ Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call
 
 All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. `apiErrorToFormMessage` (`src/api/errors.ts`) maps a thrown `ApiError` to a form-level message (surfacing backend `detail` for `409`/`422`), falling back to a generic message for non-`ApiError` throws. Types are hand-written (`src/api/types.ts`); generating from OpenAPI is deferred.
 
+**Form validation.** Forms validate client-side before submitting, mirroring the backend's rules so invalid input never costs a `422` round-trip (`409` conflicts like a duplicate ISBN are not knowable client-side and still surface from the server). Validation lives next to its form in a testable module — e.g. `src/components/bookValidation.ts` ports the backend ISBN-10/13 checksum check from `app/books/domain/book_model.py` and enforces required/length/whole-number-year rules, returning a per-field error map the form renders inline. Keep these in sync when the backend rules change.
+
 The token lives behind `src/auth/tokenStore.ts` so the storage mechanism can be hardened without touching call sites. The frontend calls the API **directly cross-origin** (no Vite proxy), relying on backend CORS (see the CORS section).
 
 ### Commands
