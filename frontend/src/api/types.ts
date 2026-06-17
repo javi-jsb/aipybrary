@@ -14,6 +14,20 @@ export interface Book {
   updated_at: string;
 }
 
+/** Payload for `POST /books`. `isbn`/`publication_year`/`synopsis` are optional
+ * server-side; we always send them (as `null` when blank) so an edit can clear
+ * a previously set value. */
+export interface BookCreate {
+  title: string;
+  author: string;
+  isbn: string | null;
+  publication_year: number | null;
+  synopsis: string | null;
+}
+
+/** Payload for `PATCH /books/{id}` — every field is optional. */
+export type BookUpdate = Partial<BookCreate>;
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

@@ -38,6 +38,8 @@ Resolve the current user via `GET /auth/me` (cached with TanStack Query) and exp
 ### Forms & error handling — lean, on the existing seam
 Controlled inputs (same style as `LoginScreen`), no form library. A small shared helper maps a thrown `ApiError` to form-level messages, surfacing backend `detail` for `409` (e.g. duplicate ISBN) and `422` (validation). **Alternative:** a form library (react-hook-form) — deferred to keep dependencies minimal; revisit only if forms grow complex.
 
+Forms also validate **client-side before submitting**, mirroring the backend's field constraints (required, max lengths, ISBN-10/13 checksum, integer year) so predictable `422`s never cost a round-trip; invalid input shows per-field messages and the request is not sent. Conflicts that are not knowable on the client (a duplicate ISBN, `409`) still come from the server. **Trade-off:** the client rules duplicate the backend's and can drift — kept lean, co-located with each form in a testable module, and called out in `CLAUDE.md` to keep in sync. `409`/`422` handling via the shared helper remains the backstop for anything the client misses.
+
 ### Incremental delivery
 Patterns (router, query client, layout) land first; then one entity per slice/PR — Books CRUD → Members → Book copies → Loans — each its own issue under umbrella #64.
 
