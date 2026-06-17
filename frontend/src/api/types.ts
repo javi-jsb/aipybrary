@@ -38,6 +38,40 @@ export interface PaginatedResponse<T> {
 
 export type BookListResponse = PaginatedResponse<Book>;
 
+export type MemberStatus = "active" | "suspended";
+
+export interface Member {
+  id: string;
+  full_name: string;
+  email: string;
+  status: MemberStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Payload for `POST /members`. The backend provisions a linked `member`-role
+ * user and returns the one-time `initial_password` (see `MemberCreateResponse`). */
+export interface MemberCreate {
+  full_name: string;
+  email: string;
+  status: MemberStatus;
+}
+
+/** Payload for `PATCH /members/{id}`. Email is owned by the linked user and is
+ * not editable here, so only `full_name` and `status` can change. */
+export interface MemberUpdate {
+  full_name?: string;
+  status?: MemberStatus;
+}
+
+/** Response of `POST /members` — a `Member` plus the one-time initial password,
+ * which is returned exactly once and never again on subsequent reads. */
+export interface MemberCreateResponse extends Member {
+  initial_password: string;
+}
+
+export type MemberListResponse = PaginatedResponse<Member>;
+
 export interface LoginRequest {
   username: string;
   password: string;

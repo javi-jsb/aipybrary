@@ -21,12 +21,13 @@
 
 ## 3. Members
 
-- [ ] 3.1 Add `Member` types and typed call functions (list, get, create, update)
-- [ ] 3.2 Members list view (`useQuery`) with navigation to detail
-- [ ] 3.3 Member detail view
-- [ ] 3.4 Member create form; display the one-time `initial_password` exactly once on success
-- [ ] 3.5 Member update form
-- [ ] 3.6 Gate member actions by role
+- [x] 3.1 Add `Member` types and typed call functions (list, get, create, update)
+- [x] 3.2 Members list view (`useQuery`) with navigation to detail
+- [x] 3.3 Member detail view
+- [x] 3.4 Member create form; display the one-time `initial_password` exactly once on success
+- [x] 3.5 Member update form
+- [x] 3.6 Gate member actions by role
+- [x] 3.7 Member delete action (admin-only), inline in the list with confirmation; translate the backend `loans.member_id` FK RESTRICT into a `409 MemberHasLoansError` and surface it on the list
 
 ## 4. Book copies
 

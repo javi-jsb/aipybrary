@@ -3,7 +3,7 @@ import { render, type RenderResult } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { AuthProvider } from "../auth/AuthProvider";
-import type { Book, User } from "../api/types";
+import type { Book, Member, User } from "../api/types";
 
 interface RenderOptions {
   /** Initial history stack for the in-memory router (default `["/"]`). */
@@ -68,6 +68,19 @@ export function makeBook(overrides: Partial<Book> = {}): Book {
     synopsis: null,
     copies_total: 3,
     copies_available: 2,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** A complete `Member`, with fields overridable per test. */
+export function makeMember(overrides: Partial<Member> = {}): Member {
+  return {
+    id: "member-1",
+    full_name: "Ada Lovelace",
+    email: "ada@example.com",
+    status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,

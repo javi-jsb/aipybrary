@@ -67,7 +67,7 @@ The system SHALL let an authenticated user delete a book via `DELETE /books/{id}
 
 ### Requirement: Member management
 
-The system SHALL let an authenticated user list members, view a member's detail, create a member, and update a member, through the corresponding member endpoints.
+The system SHALL let an authenticated user list members, view a member's detail, create a member, update a member, and delete a member, through the corresponding member endpoints. The delete action SHALL be presented only to users whose role permits it (admins).
 
 #### Scenario: List and view members
 
@@ -83,6 +83,16 @@ The system SHALL let an authenticated user list members, view a member's detail,
 
 - **WHEN** the user saves changes to a member
 - **THEN** the application sends the update request and reflects the updated member on success
+
+#### Scenario: Delete member
+
+- **WHEN** an admin confirms deletion of a member
+- **THEN** the application sends `DELETE /members/{id}` and removes the member from the list on success
+
+#### Scenario: Deletion blocked by existing loans
+
+- **WHEN** the delete request fails because the member has loans
+- **THEN** the application shows the backend error message and keeps the member in the list
 
 ### Requirement: Book-copy management
 

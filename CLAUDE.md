@@ -160,6 +160,8 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 
 `POST /members` provisions a linked `member`-role `User`, sets a random initial password, and returns it once in `MemberCreateResponse.initial_password`. Subsequent reads omit it.
 
+`DELETE /members/{id}` returns `409` when the member still has loans: the `loans.member_id` FK is `ON DELETE RESTRICT`, so `SqlModelMemberRepository.delete` catches the `IntegrityError`, recognises `MEMBER_FK_CONSTRAINT` (defined in `app/loans/domain/loan_model.py`) via `is_constraint_violated`, and raises `MemberHasLoansError`, which the router maps to `409`. This mirrors the `BookHasCopiesError` pattern.
+
 ### Testing
 
 `tests/conftest.py` provides two HTTP client fixtures:
@@ -174,7 +176,7 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 
 ## Frontend
 
-A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (Books list + full Books CRUD done; Members, copies, loans pending).
+A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (full Books CRUD and Members management done; copies, loans pending).
 
 ### Stack
 
@@ -198,7 +200,7 @@ Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call
 
 **Server state.** All reads/writes go through TanStack Query over the existing `apiClient` seam — `useQuery` with per-resource keys (e.g. `["books"]`, `["book", id]`, `["currentUser"]`); mutations (`useMutation`, e.g. the Books create/edit/delete forms) call `apiClient` and `invalidateQueries` the affected keys so lists/details refresh. Sign-out calls `queryClient.clear()` so one session's cached data never leaks into the next.
 
-**Role-aware UI.** `useCurrentUser` (`GET /auth/me`) exposes the role; `src/auth/roles.ts` centralizes the role→action gating (e.g. `canManageBooks` → `admin`/`staff` see create/edit/delete; `member` is read-only). This is **UX-only** — the backend does not enforce role authorization, so it merely hides controls; it is not a security boundary. The role→action matrix is pinned per entity slice.
+**Role-aware UI.** `useCurrentUser` (`GET /auth/me`) exposes the role; `src/auth/roles.ts` centralizes the role→action gating (e.g. `canManageBooks` → `admin`/`staff` see create/edit/delete; `member` is read-only). For members, `canManageMembers` (`admin`/`staff`) gates create/edit, while `canDeleteMembers` (`admin` only) gates the destructive delete — the matrix is pinned per entity slice, so it can diverge between entities. This is **UX-only** — the backend does not enforce role authorization, so it merely hides controls; it is not a security boundary.
 
 All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. `apiErrorToFormMessage` (`src/api/errors.ts`) maps a thrown `ApiError` to a form-level message (surfacing backend `detail` for `409`/`422`), falling back to a generic message for non-`ApiError` throws. Types are hand-written (`src/api/types.ts`); generating from OpenAPI is deferred.
 

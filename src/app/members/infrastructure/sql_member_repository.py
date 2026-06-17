@@ -2,10 +2,14 @@ import uuid
 
 from sqlalchemy import func
 from sqlalchemy import select as sa_select
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.db import is_constraint_violated
 from app.core.sorting import SortOrder
+from app.loans.domain.loan_model import MEMBER_FK_CONSTRAINT
+from app.members.domain.member_exceptions import MemberHasLoansError
 from app.members.domain.member_model import (
     Member,
     MemberStatus,
@@ -85,4 +89,10 @@ class SqlModelMemberRepository(MemberRepository):
 
     async def delete(self, member: Member) -> None:
         await self._session.delete(member)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as exc:
+            await self._session.rollback()
+            if is_constraint_violated(exc, MEMBER_FK_CONSTRAINT):
+                raise MemberHasLoansError from exc
+            raise
