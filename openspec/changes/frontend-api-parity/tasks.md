@@ -11,12 +11,12 @@
 
 ## 2. Books CRUD
 
-- [ ] 2.1 Add typed call functions for `POST`, `PATCH`, `DELETE /books/{id}` on `apiClient`
-- [ ] 2.2 Book create form (route + `useMutation`), invalidating the books list on success
-- [ ] 2.3 Surface duplicate-ISBN (`409`) errors on the create/edit form
-- [ ] 2.4 Book edit form (`PATCH`), reflecting updated values after success
-- [ ] 2.5 Book delete action with confirmation; handle the "has copies" conflict
-- [ ] 2.6 Gate create/edit/delete controls by role
+- [x] 2.1 Add typed call functions for `POST`, `PATCH`, `DELETE /books/{id}` on `apiClient`
+- [x] 2.2 Book create form (route + `useMutation`), invalidating the books list on success
+- [x] 2.3 Surface duplicate-ISBN (`409`) errors on the create/edit form
+- [x] 2.4 Book edit form (`PATCH`), reflecting updated values after success
+- [x] 2.5 Book delete action with confirmation; handle the "has copies" conflict
+- [x] 2.6 Gate create/edit/delete controls by role
 
 ## 3. Members
 

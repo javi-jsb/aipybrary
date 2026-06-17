@@ -174,7 +174,7 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 
 ## Frontend
 
-A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (Books list ported first).
+A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (Books list + full Books CRUD done; Members, copies, loans pending).
 
 ### Stack
 
@@ -192,11 +192,13 @@ A self-contained browser SPA lives under `/frontend` (Option A: the backend stay
 
 ### Layout
 
-Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call functions, `errors.ts` form-message helper), `auth/` (tokenStore storage seam, AuthContext/AuthProvider, `useCurrentUser` query), `components/` (screens + `ProtectedLayout`), `queryClient.ts` (the single `QueryClient`), `routes.ts` (shared route constants), and `App.tsx` defining the route tree.
+Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call functions, `errors.ts` form-message helper), `auth/` (tokenStore storage seam, AuthContext/AuthProvider, `useCurrentUser` query, `roles.ts` gating helpers), `components/` (screens + `ProtectedLayout`), `queryClient.ts` (the single `QueryClient`), `routes.ts` (shared route constants), and `App.tsx` defining the route tree.
 
-**Routing & layout.** `App.tsx` is a React Router route tree, not a boolean toggle: a `/login` route plus a `ProtectedLayout` (nav + sign-out + `<Outlet/>`) wrapping the resource routes. `ProtectedLayout` redirects unauthenticated access to `/login`; `LoginScreen` navigates to the default authenticated route (`/books`) on success and redirects there if already authenticated. Provider order (`main.tsx`): `QueryClientProvider` → `BrowserRouter` → `AuthProvider`.
+**Routing & layout.** `App.tsx` is a React Router route tree, not a boolean toggle: a `/login` route plus a `ProtectedLayout` (nav + sign-out + `<Outlet/>`) wrapping the resource routes (`/books`, `/books/new`, `/books/:id/edit`, …). `ProtectedLayout` redirects unauthenticated access to `/login`; `LoginScreen` navigates to the default authenticated route (`/books`) on success and redirects there if already authenticated. Provider order (`main.tsx`): `QueryClientProvider` → `BrowserRouter` → `AuthProvider`.
 
-**Server state.** All reads/writes go through TanStack Query over the existing `apiClient` seam — `useQuery` with per-resource keys (e.g. `["books"]`, `["currentUser"]`); mutations (later slices) `invalidateQueries` for the affected keys. Sign-out calls `queryClient.clear()` so one session's cached data never leaks into the next. `useCurrentUser` (`GET /auth/me`) exposes the role for **UX-only** action gating — not a security boundary; the server is the authority.
+**Server state.** All reads/writes go through TanStack Query over the existing `apiClient` seam — `useQuery` with per-resource keys (e.g. `["books"]`, `["book", id]`, `["currentUser"]`); mutations (`useMutation`, e.g. the Books create/edit/delete forms) call `apiClient` and `invalidateQueries` the affected keys so lists/details refresh. Sign-out calls `queryClient.clear()` so one session's cached data never leaks into the next.
+
+**Role-aware UI.** `useCurrentUser` (`GET /auth/me`) exposes the role; `src/auth/roles.ts` centralizes the role→action gating (e.g. `canManageBooks` → `admin`/`staff` see create/edit/delete; `member` is read-only). This is **UX-only** — the backend does not enforce role authorization, so it merely hides controls; it is not a security boundary. The role→action matrix is pinned per entity slice.
 
 All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. `apiErrorToFormMessage` (`src/api/errors.ts`) maps a thrown `ApiError` to a form-level message (surfacing backend `detail` for `409`/`422`), falling back to a generic message for non-`ApiError` throws. Types are hand-written (`src/api/types.ts`); generating from OpenAPI is deferred.
 
