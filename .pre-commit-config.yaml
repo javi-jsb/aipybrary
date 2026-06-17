@@ -38,3 +38,10 @@ repos:
         files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
         stages: [pre-push]
+      - id: frontend-test
+        name: frontend-test (vitest)
+        entry: pnpm --dir frontend test
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+        stages: [pre-push]

@@ -4,6 +4,7 @@
 # Frontend (Node toolchain under /frontend)
 frontend/node_modules/
 frontend/dist/
+frontend/coverage/
 frontend/.env
 
 # Byte-compiled / optimized / DLL files
