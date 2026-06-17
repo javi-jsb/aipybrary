@@ -8,3 +8,9 @@ In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the re
 
 If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
+
+## CodeGraph — usage notes (this repo)
+
+This repo is indexed. Default to CodeGraph before grep/read.
+
+The MCP tools arrive deferred each session. Load them with the fully-qualified `mcp__codegraph__` prefix — e.g. `select:mcp__codegraph__codegraph_explore`. The bare short name does not match in `select:`.
