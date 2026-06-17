@@ -3,7 +3,7 @@ import { render, type RenderResult } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { AuthProvider } from "../auth/AuthProvider";
-import type { Book } from "../api/types";
+import type { Book, User } from "../api/types";
 
 interface RenderOptions {
   /** Initial history stack for the in-memory router (default `["/"]`). */
@@ -42,6 +42,19 @@ export function jsonResponse(data: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** A complete `User` (the `GET /auth/me` payload), with overridable fields. */
+export function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    id: "user-1",
+    email: "staff@example.com",
+    role: "staff",
+    is_active: true,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
 }
 
 /** A complete `Book`, with fields overridable per test. */
