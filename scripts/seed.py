@@ -1,8 +1,8 @@
-"""Seed the database with example users, books, members, book copies, and loans.
+"""Seed the database with example users, members, books, book copies, and loans.
 
 Idempotent per entity: each block is seeded only if no records of that type
 exist — seeding one entity type is never skipped because another has data.
-Seeding order: users → books → members → book copies → loans.
+Seeding order: users → members → books → book copies → loans.
 """
 
 import asyncio
@@ -32,25 +32,58 @@ def _utcnow() -> datetime:
 # Users — admin and staff bootstrap accounts
 # ---------------------------------------------------------------------------
 
+# Single password for every seeded account — this is throwaway test data, not
+# a secret. Keeps local logins trivial to remember.
+_SEED_PASSWORD = "pass"
+
 _ADMIN_EMAIL = os.environ.get("SEED_ADMIN_EMAIL", "admin@aipybrary.dev")
-_ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "Admin1234!")
+
+# Obvious demo logins for exercising role-aware UI: one staff (catalog
+# management) and one member (read-only). The member is provisioned with its
+# linked Member record in the members block below, not here.
+_STAFF_EMAIL = "staff@aipybrary.dev"
+_MEMBER_EMAIL = "member@aipybrary.dev"
 
 SAMPLE_USERS = [
     {
         "email": _ADMIN_EMAIL,
-        "password": _ADMIN_PASSWORD,
         "role": UserRole.admin,
     },
     {
+        "email": _STAFF_EMAIL,
+        "role": UserRole.staff,
+    },
+    {
         "email": "alice.smith@aipybrary.dev",
-        "password": "Staff1234!",
         "role": UserRole.staff,
     },
     {
         "email": "bob.jones@aipybrary.dev",
-        "password": "Staff1234!",
         "role": UserRole.staff,
     },
+]
+
+
+# ---------------------------------------------------------------------------
+# Members — each paired with a member-role User
+# ---------------------------------------------------------------------------
+
+SAMPLE_MEMBERS = [
+    # Obvious demo member login (read-only role) — see _MEMBER_EMAIL above.
+    {"full_name": "Demo Member", "email": _MEMBER_EMAIL, "status": MemberStatus.active},
+    {"full_name": "Ada Lovelace", "email": "ada.lovelace@example.com", "status": MemberStatus.active},
+    {"full_name": "Alan Turing", "email": "alan.turing@example.com", "status": MemberStatus.active},
+    {"full_name": "Grace Hopper", "email": "grace.hopper@example.com", "status": MemberStatus.active},
+    {"full_name": "Katherine Johnson", "email": "katherine.johnson@example.com", "status": MemberStatus.active},
+    {"full_name": "Edsger Dijkstra", "email": "edsger.dijkstra@example.com", "status": MemberStatus.active},
+    {"full_name": "Barbara Liskov", "email": "barbara.liskov@example.com", "status": MemberStatus.active},
+    {"full_name": "Donald Knuth", "email": "donald.knuth@example.com", "status": MemberStatus.active},
+    {"full_name": "Margaret Hamilton", "email": "margaret.hamilton@example.com", "status": MemberStatus.active},
+    {"full_name": "Tim Berners-Lee", "email": "tim.bernerslee@example.com", "status": MemberStatus.active},
+    # Suspended members — exercise status filtering/sorting
+    {"full_name": "Ken Thompson", "email": "ken.thompson@example.com", "status": MemberStatus.suspended},
+    {"full_name": "Dennis Ritchie", "email": "dennis.ritchie@example.com", "status": MemberStatus.suspended},
+    {"full_name": "Linus Torvalds", "email": "linus.torvalds@example.com", "status": MemberStatus.suspended},
 ]
 
 
@@ -196,29 +229,6 @@ SAMPLE_BOOKS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Members — each paired with a member-role User
-# ---------------------------------------------------------------------------
-
-SAMPLE_MEMBERS = [
-    {"full_name": "Ada Lovelace", "email": "ada.lovelace@example.com", "status": MemberStatus.active},
-    {"full_name": "Alan Turing", "email": "alan.turing@example.com", "status": MemberStatus.active},
-    {"full_name": "Grace Hopper", "email": "grace.hopper@example.com", "status": MemberStatus.active},
-    {"full_name": "Katherine Johnson", "email": "katherine.johnson@example.com", "status": MemberStatus.active},
-    {"full_name": "Edsger Dijkstra", "email": "edsger.dijkstra@example.com", "status": MemberStatus.active},
-    {"full_name": "Barbara Liskov", "email": "barbara.liskov@example.com", "status": MemberStatus.active},
-    {"full_name": "Donald Knuth", "email": "donald.knuth@example.com", "status": MemberStatus.active},
-    {"full_name": "Margaret Hamilton", "email": "margaret.hamilton@example.com", "status": MemberStatus.active},
-    {"full_name": "Tim Berners-Lee", "email": "tim.bernerslee@example.com", "status": MemberStatus.active},
-    # Suspended members — exercise status filtering/sorting
-    {"full_name": "Ken Thompson", "email": "ken.thompson@example.com", "status": MemberStatus.suspended},
-    {"full_name": "Dennis Ritchie", "email": "dennis.ritchie@example.com", "status": MemberStatus.suspended},
-    {"full_name": "Linus Torvalds", "email": "linus.torvalds@example.com", "status": MemberStatus.suspended},
-]
-
-_MEMBER_DEFAULT_PASSWORD = "Member1234!"
-
-
 async def seed() -> None:
     async with async_session() as session:
         # ----- Users (admin + staff) -----
@@ -229,23 +239,15 @@ async def seed() -> None:
                 session.add(
                     User(
                         email=u["email"],
-                        password_hash=hash_password(u["password"]),
+                        password_hash=hash_password(_SEED_PASSWORD),
                         role=u["role"],
                         is_active=True,
                     )
                 )
             await session.commit()
-            print(f"Seeded {len(SAMPLE_USERS)} users (admin + staff).")
-            print(f"  Admin login: {_ADMIN_EMAIL} / {_ADMIN_PASSWORD}")
-
-        # ----- Books -----
-        if (await session.exec(select(Book).limit(1))).first() is not None:
-            print("Database already contains books — skipping book seed.")
-        else:
-            for book_data in SAMPLE_BOOKS:
-                session.add(Book.model_validate(book_data))
-            await session.commit()
-            print(f"Seeded {len(SAMPLE_BOOKS)} books.")
+            print(f"Seeded {len(SAMPLE_USERS)} users (admin + staff). Password for all: {_SEED_PASSWORD}")
+            print(f"  Admin login: {_ADMIN_EMAIL}")
+            print(f"  Staff login: {_STAFF_EMAIL}")
 
         # ----- Members (each with a linked member-role User) -----
         if (await session.exec(select(Member).limit(1))).first() is not None:
@@ -254,7 +256,7 @@ async def seed() -> None:
             for m in SAMPLE_MEMBERS:
                 user = User(
                     email=m["email"],
-                    password_hash=hash_password(_MEMBER_DEFAULT_PASSWORD),
+                    password_hash=hash_password(_SEED_PASSWORD),
                     role=UserRole.member,
                     is_active=True,
                 )
@@ -264,6 +266,16 @@ async def seed() -> None:
                 session.add(member)
             await session.commit()
             print(f"Seeded {len(SAMPLE_MEMBERS)} members with linked member-role users.")
+            print(f"  Member login: {_MEMBER_EMAIL}")
+
+        # ----- Books -----
+        if (await session.exec(select(Book).limit(1))).first() is not None:
+            print("Database already contains books — skipping book seed.")
+        else:
+            for book_data in SAMPLE_BOOKS:
+                session.add(Book.model_validate(book_data))
+            await session.commit()
+            print(f"Seeded {len(SAMPLE_BOOKS)} books.")
 
         # ----- Book copies -----
         if (await session.exec(select(BookCopy).limit(1))).first() is not None:
