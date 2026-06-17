@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from "react-router";
 import { BookForm } from "./components/BookForm";
 import { BooksList } from "./components/BooksList";
+import { MemberDetail } from "./components/MemberDetail";
+import { MemberForm } from "./components/MemberForm";
+import { MembersList } from "./components/MembersList";
 import { LoginScreen } from "./components/LoginScreen";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import { DEFAULT_AUTHENTICATED_ROUTE, LOGIN_ROUTE } from "./routes";
@@ -13,6 +16,10 @@ export default function App() {
         <Route path="/books" element={<BooksList />} />
         <Route path="/books/new" element={<BookForm />} />
         <Route path="/books/:id/edit" element={<BookForm />} />
+        <Route path="/members" element={<MembersList />} />
+        <Route path="/members/new" element={<MemberForm />} />
+        <Route path="/members/:id" element={<MemberDetail />} />
+        <Route path="/members/:id/edit" element={<MemberForm />} />
         <Route index element={<Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />} />
       </Route>
       <Route path="*" element={<Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />} />

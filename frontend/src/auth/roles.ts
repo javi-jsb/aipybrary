@@ -3,6 +3,15 @@ import type { UserRole } from "../api/types";
 /** Roles allowed to manage the catalog (create/edit/delete books). */
 const BOOK_MANAGER_ROLES: readonly UserRole[] = ["admin", "staff"];
 
+/** Roles allowed to manage members (create/edit). Pinned per entity slice so
+ * the matrix can diverge from books without coupling the two. */
+const MEMBER_MANAGER_ROLES: readonly UserRole[] = ["admin", "staff"];
+
+/** Roles allowed to delete members. Narrower than create/edit: deletion is
+ * destructive (and the backend rejects it for members with loans), so only
+ * admins may do it. */
+const MEMBER_DELETER_ROLES: readonly UserRole[] = ["admin"];
+
 /**
  * Whether the given role may see the book create/edit/delete controls.
  *
@@ -12,4 +21,22 @@ const BOOK_MANAGER_ROLES: readonly UserRole[] = ["admin", "staff"];
  */
 export function canManageBooks(role: UserRole | undefined): boolean {
   return role !== undefined && BOOK_MANAGER_ROLES.includes(role);
+}
+
+/**
+ * Whether the given role may see the member create/edit controls. Same UX-only
+ * caveat as {@link canManageBooks}: it hides controls, it is not a security
+ * boundary.
+ */
+export function canManageMembers(role: UserRole | undefined): boolean {
+  return role !== undefined && MEMBER_MANAGER_ROLES.includes(role);
+}
+
+/**
+ * Whether the given role may see the member delete control. Same UX-only caveat
+ * as {@link canManageBooks}: it hides the control, it is not a security
+ * boundary.
+ */
+export function canDeleteMembers(role: UserRole | undefined): boolean {
+  return role !== undefined && MEMBER_DELETER_ROLES.includes(role);
 }
