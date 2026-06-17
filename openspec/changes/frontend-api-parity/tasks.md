@@ -1,13 +1,13 @@
 ## 1. Foundation (routing, data layer, layout)
 
-- [ ] 1.1 Add dependencies: `react-router` and `@tanstack/react-query` (isolated under `/frontend`)
-- [ ] 1.2 Wrap the app in a `QueryClientProvider` (single `QueryClient`) alongside the existing `AuthProvider`
-- [ ] 1.3 Introduce React Router: replace the `App.tsx` boolean toggle with a route tree (login route + protected routes)
-- [ ] 1.4 Build the authenticated layout: nav + sign-out + `<Outlet/>`; redirect unauthenticated access to `/login`
-- [ ] 1.5 Move `LoginScreen` to a route and navigate to the default authenticated route on success
-- [ ] 1.6 Add a `useCurrentUser` query (`GET /auth/me`) and expose the role for role-aware UI gating
-- [ ] 1.7 Add a shared helper that maps a thrown `ApiError` to form-level messages (surfacing `409`/`422` detail)
-- [ ] 1.8 Port the existing Books list to `useQuery` + the new layout/route (no behavior change)
+- [x] 1.1 Add dependencies: `react-router` and `@tanstack/react-query` (isolated under `/frontend`)
+- [x] 1.2 Wrap the app in a `QueryClientProvider` (single `QueryClient`) alongside the existing `AuthProvider`
+- [x] 1.3 Introduce React Router: replace the `App.tsx` boolean toggle with a route tree (login route + protected routes)
+- [x] 1.4 Build the authenticated layout: nav + sign-out + `<Outlet/>`; redirect unauthenticated access to `/login`
+- [x] 1.5 Move `LoginScreen` to a route and navigate to the default authenticated route on success
+- [x] 1.6 Add a `useCurrentUser` query (`GET /auth/me`) and expose the role for role-aware UI gating
+- [x] 1.7 Add a shared helper that maps a thrown `ApiError` to form-level messages (surfacing `409`/`422` detail)
+- [x] 1.8 Port the existing Books list to `useQuery` + the new layout/route (no behavior change)
 
 ## 2. Books CRUD
 

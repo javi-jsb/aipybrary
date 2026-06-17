@@ -1,12 +1,15 @@
 # aipybrary frontend
 
-A minimal React + TypeScript + Tailwind single-page app (built with Vite,
-managed with pnpm) for visualizing and exercising the aipybrary API. It logs in
-against the backend, holds the returned JWT, and renders a protected Books list.
+A React + TypeScript + Tailwind single-page app (built with Vite, managed with
+pnpm) for visualizing and exercising the aipybrary API. It logs in against the
+backend, holds the returned JWT, and serves the protected views behind a routed,
+authenticated layout. Entity views are added incrementally (Books list first).
 
 ## Stack
 
 - React 19 + TypeScript
+- React Router (`react-router`) for client-side routing
+- TanStack Query (`@tanstack/react-query`) for server state
 - Vite (dev server with HMR + production bundler)
 - Tailwind CSS (via the `@tailwindcss/vite` plugin)
 - ESLint + Prettier
@@ -51,9 +54,16 @@ CORS enabled for this origin (the dev origin is allowed by default; see the root
 ```
 frontend/
   src/
-    api/      apiClient wrapper, hand-written types, typed call functions
-    auth/     token storage seam + auth context/provider
-    components/  LoginScreen, BooksList
-    App.tsx   auth gating (login vs. books)
-    main.tsx  entry point
+    api/      apiClient wrapper, hand-written types, typed call functions,
+              errors.ts (ApiError → form-message helper)
+    auth/     token storage seam, auth context/provider, useCurrentUser query
+    components/  LoginScreen, BooksList, ProtectedLayout (nav + sign-out)
+    queryClient.ts  the single TanStack Query client
+    routes.ts       shared route constants
+    App.tsx   route tree (/login + protected routes)
+    main.tsx  entry point (QueryClientProvider → BrowserRouter → AuthProvider)
 ```
+
+Reads/writes go through TanStack Query over the `apiClient` seam; routing is
+handled by React Router behind `ProtectedLayout`, which redirects unauthenticated
+access to `/login`. See the root `CLAUDE.md` frontend section for details.
