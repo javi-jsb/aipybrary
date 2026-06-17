@@ -1,12 +1,22 @@
 import { useState, type FormEvent } from "react";
+import { Navigate, useNavigate } from "react-router";
+import { apiErrorToFormMessage } from "../api/errors";
 import { useAuth } from "../auth/AuthContext";
+import { DEFAULT_AUTHENTICATED_ROUTE } from "../routes";
 
 export function LoginScreen() {
-  const { login } = useAuth();
+  const { isAuthenticated, login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Already signed in (e.g. landing on /login with a stored token): skip the
+  // form and go straight to the authenticated app.
+  if (isAuthenticated) {
+    return <Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />;
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -14,8 +24,9 @@ export function LoginScreen() {
     setSubmitting(true);
     try {
       await login(username, password);
+      navigate(DEFAULT_AUTHENTICATED_ROUTE, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+      setError(apiErrorToFormMessage(err, "Login failed. Please try again."));
     } finally {
       setSubmitting(false);
     }
