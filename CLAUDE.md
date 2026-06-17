@@ -174,8 +174,9 @@ A self-contained browser SPA lives under `/frontend` (Option A: the backend stay
 | Styling | Tailwind CSS (via the `@tailwindcss/vite` plugin) |
 | Package manager | pnpm |
 | Linting & formatting | ESLint + Prettier |
+| Testing | Vitest + React Testing Library (jsdom) |
 
-The Node toolchain is fully isolated under `/frontend` — independent of the Python `pyproject.toml`. `pnpm-lock.yaml` is committed (the analog of `uv.lock`); `frontend/node_modules` and `frontend/dist` are gitignored.
+The Node toolchain is fully isolated under `/frontend` — independent of the Python `pyproject.toml`. `pnpm-lock.yaml` is committed (the analog of `uv.lock`); `frontend/node_modules`, `frontend/dist`, and `frontend/coverage` are gitignored.
 
 ### Layout
 
@@ -202,6 +203,9 @@ Run from `/frontend` (the Makefile is backend-only):
 | `pnpm dev` | Start the Vite dev server with HMR |
 | `pnpm build` | Type-check (`tsc -b`) and produce a production build |
 | `pnpm typecheck` | Type-check only (`tsc -b`, no build) — used by the pre-push hook |
+| `pnpm test` | Run the test suite once (Vitest) — used by the pre-push hook |
+| `pnpm test:watch` | Run Vitest in watch mode |
+| `pnpm coverage` | Run tests with a V8 coverage report (terminal + HTML in `frontend/coverage/`) |
 | `pnpm lint` | Run ESLint |
 | `pnpm format` / `pnpm format:check` | Format / verify formatting with Prettier |
 
@@ -216,9 +220,15 @@ Run from `/frontend` (the Makefile is backend-only):
 | Stage | Backend | Frontend |
 |---|---|---|
 | `pre-commit` (fast) | `ruff-format`, `ruff` | `frontend-lint` (ESLint), `frontend-format` (Prettier `--check`) |
-| `pre-push` (slower) | `pytest` | `frontend-typecheck` (`tsc -b`) |
+| `pre-push` (slower) | `pytest` | `frontend-typecheck` (`tsc -b`), `frontend-test` (Vitest) |
 
 These local hooks run the existing pnpm scripts, so **Node + pnpm must be installed** (already a frontend prerequisite). Install the hooks once with `uv run pre-commit install` (or `pre-commit install`).
+
+### Testing
+
+Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. Test files sit next to the code they cover (`*.test.ts` / `*.test.tsx`); shared helpers live in `src/test/` (`setup.ts` wires jest-dom matchers and per-test cleanup; `utils.tsx` provides `renderWithAuth`, a `jsonResponse` builder, and a `makeBook` factory). Vitest globals are **off** — import `describe`/`it`/`expect`/`vi` explicitly.
+
+Tests exercise behaviour through the public seams: `fetch` is stubbed with `vi.stubGlobal` (no MSW yet) and assertions go through the real `apiClient`, `tokenStore`, and `AuthProvider` rather than mocking them. Coverage is **reported, not gated** — the seams and logic (`apiClient`, `tokenStore`) should stay near 100%, while UI components are best-effort; there is no failing threshold, so don't chase defensive branches.
 
 ## Language
 

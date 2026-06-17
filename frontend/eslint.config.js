@@ -7,7 +7,7 @@ import prettier from "eslint-config-prettier";
 import { globalIgnores } from "eslint/config";
 
 export default tseslint.config([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "coverage"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -25,6 +25,14 @@ export default tseslint.config([
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
+    },
+  },
+  {
+    // Test files and helpers export non-component utilities; the Fast Refresh
+    // rule is irrelevant to them.
+    files: ["**/*.test.{ts,tsx}", "src/test/**"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 ]);
