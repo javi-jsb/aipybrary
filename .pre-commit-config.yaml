@@ -11,9 +11,30 @@ repos:
 
   - repo: local
     hooks:
+      - id: frontend-lint
+        name: frontend-lint (eslint)
+        entry: pnpm --dir frontend lint
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: frontend-format
+        name: frontend-format (prettier)
+        entry: pnpm --dir frontend format:check
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx|css|json|html|md)$
+        pass_filenames: false
+        stages: [pre-commit]
       - id: pytest
         name: pytest
         entry: uv run pytest
         language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: frontend-typecheck
+        name: frontend-typecheck (tsc)
+        entry: pnpm --dir frontend typecheck
+        language: system
+        files: ^frontend/.*\.(ts|tsx)$
         pass_filenames: false
         stages: [pre-push]

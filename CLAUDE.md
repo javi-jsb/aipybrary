@@ -201,12 +201,24 @@ Run from `/frontend` (the Makefile is backend-only):
 | `pnpm install` | Install dependencies |
 | `pnpm dev` | Start the Vite dev server with HMR |
 | `pnpm build` | Type-check (`tsc -b`) and produce a production build |
+| `pnpm typecheck` | Type-check only (`tsc -b`, no build) — used by the pre-push hook |
 | `pnpm lint` | Run ESLint |
 | `pnpm format` / `pnpm format:check` | Format / verify formatting with Prettier |
 
 | Variable | Description |
 |---|---|
 | `VITE_API_BASE_URL` | Base URL of the backend API. Default `http://localhost:8077` |
+
+### Git hooks
+
+`.pre-commit-config.yaml` guards the frontend the same way it guards the backend, scoped to `frontend/` files so backend-only commits never spin up Node:
+
+| Stage | Backend | Frontend |
+|---|---|---|
+| `pre-commit` (fast) | `ruff-format`, `ruff` | `frontend-lint` (ESLint), `frontend-format` (Prettier `--check`) |
+| `pre-push` (slower) | `pytest` | `frontend-typecheck` (`tsc -b`) |
+
+These local hooks run the existing pnpm scripts, so **Node + pnpm must be installed** (already a frontend prerequisite). Install the hooks once with `uv run pre-commit install` (or `pre-commit install`).
 
 ## Language
 
