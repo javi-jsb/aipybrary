@@ -174,7 +174,7 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 
 ## Frontend
 
-A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API; it currently proves one vertical slice — log in, hold a JWT, render a protected Books list.
+A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (Books list ported first).
 
 ### Stack
 
@@ -182,6 +182,8 @@ A self-contained browser SPA lives under `/frontend` (Option A: the backend stay
 |---|---|
 | Language | TypeScript |
 | Framework | React 19 |
+| Routing | React Router (`react-router`) |
+| Server state | TanStack Query (`@tanstack/react-query`) |
 | Build / dev server | Vite (HMR) |
 | Styling | Tailwind CSS (via the `@tailwindcss/vite` plugin) |
 | Package manager | pnpm |
@@ -190,9 +192,13 @@ A self-contained browser SPA lives under `/frontend` (Option A: the backend stay
 
 ### Layout
 
-Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call functions), `auth/` (tokenStore storage seam + AuthContext/AuthProvider), `components/` (screens), and `App.tsx` doing the auth gating.
+Under `frontend/src/`: `api/` (apiClient wrapper, hand-written types, typed call functions, `errors.ts` form-message helper), `auth/` (tokenStore storage seam, AuthContext/AuthProvider, `useCurrentUser` query), `components/` (screens + `ProtectedLayout`), `queryClient.ts` (the single `QueryClient`), `routes.ts` (shared route constants), and `App.tsx` defining the route tree.
 
-All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. This is the seam where a generated client or TanStack Query slots in later without touching screens. Types for `Book` and the auth payloads are hand-written for now (generating from OpenAPI is deferred).
+**Routing & layout.** `App.tsx` is a React Router route tree, not a boolean toggle: a `/login` route plus a `ProtectedLayout` (nav + sign-out + `<Outlet/>`) wrapping the resource routes. `ProtectedLayout` redirects unauthenticated access to `/login`; `LoginScreen` navigates to the default authenticated route (`/books`) on success and redirects there if already authenticated. Provider order (`main.tsx`): `QueryClientProvider` → `BrowserRouter` → `AuthProvider`.
+
+**Server state.** All reads/writes go through TanStack Query over the existing `apiClient` seam — `useQuery` with per-resource keys (e.g. `["books"]`, `["currentUser"]`); mutations (later slices) `invalidateQueries` for the affected keys. Sign-out calls `queryClient.clear()` so one session's cached data never leaks into the next. `useCurrentUser` (`GET /auth/me`) exposes the role for **UX-only** action gating — not a security boundary; the server is the authority.
+
+All backend calls go through a single `apiClient` helper (`src/api/client.ts`): it prepends `VITE_API_BASE_URL`, attaches `Authorization: Bearer <token>` when a token is stored, parses JSON, and throws `ApiError` on non-success. `apiErrorToFormMessage` (`src/api/errors.ts`) maps a thrown `ApiError` to a form-level message (surfacing backend `detail` for `409`/`422`), falling back to a generic message for non-`ApiError` throws. Types are hand-written (`src/api/types.ts`); generating from OpenAPI is deferred.
 
 The token lives behind `src/auth/tokenStore.ts` so the storage mechanism can be hardened without touching call sites. The frontend calls the API **directly cross-origin** (no Vite proxy), relying on backend CORS (see the CORS section).
 
@@ -214,7 +220,7 @@ Pinning policy (the frontend analog of the backend's; keep the two aligned):
 
 ### Testing
 
-Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. Test files sit next to the code they cover (`*.test.ts` / `*.test.tsx`); shared helpers live in `src/test/` (`setup.ts` wires jest-dom matchers and per-test cleanup; `utils.tsx` provides `renderWithAuth`, a `jsonResponse` builder, and a `makeBook` factory). Vitest globals are **off** — import `describe`/`it`/`expect`/`vi` explicitly.
+Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. Test files sit next to the code they cover (`*.test.ts` / `*.test.tsx`); shared helpers live in `src/test/` (`setup.ts` wires jest-dom matchers and per-test cleanup; `utils.tsx` provides `renderWithAuth`, a `jsonResponse` builder, and a `makeBook` factory). `renderWithAuth` wraps the UI in the app's providers — a fresh per-render `QueryClient` (retries off), a `MemoryRouter` (override the history stack via `{ initialEntries }`), and the real `AuthProvider`. Vitest globals are **off** — import `describe`/`it`/`expect`/`vi` explicitly.
 
 Tests exercise behaviour through the public seams: `fetch` is stubbed with `vi.stubGlobal` (no MSW yet) and assertions go through the real `apiClient`, `tokenStore`, and `AuthProvider` rather than mocking them. Coverage is **reported, not gated** — the seams and logic (`apiClient`, `tokenStore`) should stay near 100%, while UI components are best-effort; there is no failing threshold, so don't chase defensive branches.
 

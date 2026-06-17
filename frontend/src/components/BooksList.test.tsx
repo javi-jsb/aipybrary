@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { BooksList } from "./BooksList";
-import { getToken, setToken } from "../auth/tokenStore";
 import { jsonResponse, makeBook, renderWithAuth } from "../test/utils";
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -40,17 +38,5 @@ describe("BooksList", () => {
     renderWithAuth(<BooksList />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Server error");
-  });
-
-  it("clears the session when signing out", async () => {
-    setToken("tok");
-    fetchMock.mockResolvedValue(bookListResponse([]));
-    const user = userEvent.setup();
-    renderWithAuth(<BooksList />);
-
-    await screen.findByText("No books found.");
-    await user.click(screen.getByRole("button", { name: "Sign out" }));
-
-    expect(getToken()).toBeNull();
   });
 });

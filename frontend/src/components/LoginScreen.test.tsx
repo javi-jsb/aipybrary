@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Route, Routes } from "react-router";
 import { LoginScreen } from "./LoginScreen";
-import { getToken } from "../auth/tokenStore";
+import { getToken, setToken } from "../auth/tokenStore";
 import { jsonResponse, renderWithAuth } from "../test/utils";
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -51,5 +52,19 @@ describe("LoginScreen", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid credentials");
     expect(getToken()).toBeNull();
+  });
+
+  it("redirects away from the login route when already authenticated", () => {
+    setToken("tok");
+    renderWithAuth(
+      <Routes>
+        <Route path="/login" element={<LoginScreen />} />
+        <Route path="/books" element={<div>Books route</div>} />
+      </Routes>,
+      { initialEntries: ["/login"] },
+    );
+
+    expect(screen.getByText("Books route")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sign in" })).not.toBeInTheDocument();
   });
 });

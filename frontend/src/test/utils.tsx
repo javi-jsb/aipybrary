@@ -1,16 +1,39 @@
 import type { ReactElement } from "react";
 import { render, type RenderResult } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
 import { AuthProvider } from "../auth/AuthProvider";
 import type { Book } from "../api/types";
 
+interface RenderOptions {
+  /** Initial history stack for the in-memory router (default `["/"]`). */
+  initialEntries?: string[];
+}
+
 /**
- * Render a component tree wrapped in the real {@link AuthProvider}, so screens
- * that consume `useAuth` (LoginScreen, BooksList, App) work as they do in the
- * app. Auth state derives from the token store; seed it with `setToken` before
- * rendering to start authenticated.
+ * Render a component tree wrapped in the providers it gets in the real app: a
+ * fresh TanStack Query client, an in-memory router, and the real
+ * {@link AuthProvider}. Screens that consume `useAuth`, `useQuery`, or router
+ * hooks work as they do in production. Auth state derives from the token store;
+ * seed it with `setToken` before rendering to start authenticated.
+ *
+ * Each call builds its own `QueryClient` (retries off) so cached data never
+ * leaks between tests and error states surface immediately.
  */
-export function renderWithAuth(ui: ReactElement): RenderResult {
-  return render(<AuthProvider>{ui}</AuthProvider>);
+export function renderWithAuth(
+  ui: ReactElement,
+  { initialEntries = ["/"] }: RenderOptions = {},
+): RenderResult {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <AuthProvider>{ui}</AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 /** Build a JSON `Response`, matching what the backend returns through fetch. */
