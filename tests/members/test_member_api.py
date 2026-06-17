@@ -324,3 +324,23 @@ async def test_delete_member(client: AsyncClient) -> None:
 async def test_delete_member_not_found(client: AsyncClient) -> None:
     response = await client.delete(f"/members/{uuid.uuid4()}")
     assert response.status_code == 404
+
+
+async def test_delete_member_with_loans_conflict(client: AsyncClient) -> None:
+    member = await _create_member(client, full_name="Borrower")
+    book = await client.post("/books", json={"title": "T", "author": "A"})
+    copy = await client.post(
+        "/book-copies",
+        json={"book_id": book.json()["id"], "barcode": f"BC-{uuid.uuid4()}"},
+    )
+    borrow = await client.post(
+        "/loans",
+        json={"member_id": member["id"], "book_copy_id": copy.json()["id"]},
+    )
+    assert borrow.status_code == 201
+
+    response = await client.delete(f"/members/{member['id']}")
+    assert response.status_code == 409
+
+    # The member is still there after the blocked delete.
+    assert (await client.get(f"/members/{member['id']}")).status_code == 200

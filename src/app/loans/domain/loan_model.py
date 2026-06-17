@@ -22,13 +22,19 @@ class SortBy(StrEnum):
     returned_at = "returned_at"
 
 
+# FK from loans to members (ON DELETE RESTRICT). Named so the member repository
+# can recognise its violation and translate it into a domain-level error,
+# mirroring BOOK_FK_CONSTRAINT for books.
+MEMBER_FK_CONSTRAINT = "fk_loans_member_id_members"
+
+
 class Loan(Entity, table=True):
     __tablename__ = "loans"
 
     member_id: uuid.UUID = Field(
         sa_column=Column(
             Uuid(),
-            ForeignKey("members.id", ondelete="RESTRICT", name="fk_loans_member_id_members"),
+            ForeignKey("members.id", ondelete="RESTRICT", name=MEMBER_FK_CONSTRAINT),
             nullable=False,
             index=True,
         )

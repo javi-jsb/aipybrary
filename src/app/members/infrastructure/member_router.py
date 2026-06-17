@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.core.sorting import SortOrder
 from app.database import get_session
 from app.members.application.member_service import MemberService
-from app.members.domain.member_exceptions import DuplicateEmailError
+from app.members.domain.member_exceptions import DuplicateEmailError, MemberHasLoansError
 from app.members.domain.member_model import (
     MemberCreate,
     MemberCreateResponse,
@@ -23,6 +23,7 @@ from app.users.infrastructure.sql_user_repository import SqlModelUserRepository
 router = APIRouter(prefix="/members", tags=["members"])
 
 _DUPLICATE_EMAIL_DETAIL = "Email already registered"
+_HAS_LOANS_DETAIL = "Member has loans and cannot be deleted"
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> MemberService:
@@ -77,6 +78,9 @@ async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: Servi
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_member(member_id: uuid.UUID, service: ServiceDep) -> None:
-    deleted = await service.delete(member_id)
+    try:
+        deleted = await service.delete(member_id)
+    except MemberHasLoansError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_HAS_LOANS_DETAIL) from None
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
