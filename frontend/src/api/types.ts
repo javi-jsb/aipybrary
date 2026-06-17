@@ -33,3 +33,15 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
 }
+
+export type UserRole = "admin" | "staff" | "member";
+
+/** Mirror of the backend `UserPublic` payload returned by `GET /auth/me`. */
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
