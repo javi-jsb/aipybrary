@@ -80,6 +80,8 @@ All commands go through the Makefile — never call `uv run ...` directly.
 **Testing**
 - `make test` — run the test suite
 - `make coverage` — run tests with coverage; produces a terminal report (missing lines) and an HTML report in `htmlcov/`
+- `make test-frontend` — run the frontend test suite (Vitest); proxies to `pnpm --dir frontend test`
+- `make coverage-frontend` — run frontend tests with coverage; terminal report + HTML in `frontend/coverage/`
 
 **Code quality**
 - `make check` — lint and format verification (read-only)
@@ -195,7 +197,7 @@ The token lives behind `src/auth/tokenStore.ts` so the storage mechanism can be 
 
 ### Commands
 
-Run from `/frontend` (the Makefile is backend-only):
+Run from `/frontend` (the root Makefile is mostly backend, but proxies a few frontend targets: `make dev-frontend`, `make test-frontend`, `make coverage-frontend`):
 
 | Command | Description |
 |---|---|

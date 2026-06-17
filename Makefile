@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-frontend db-migrate db-seed test coverage check format db-up db-down db-down-clean
+.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend check format db-up db-down db-down-clean
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
@@ -31,6 +31,12 @@ test: ## Run the test suite
 coverage: ## Run tests with coverage (terminal + HTML report)
 	uv run pytest --cov --cov-report=term-missing --cov-report=html
 
+test-frontend: ## Run the frontend test suite (Vitest) from /frontend
+	pnpm --dir frontend test
+
+coverage-frontend: ## Run frontend tests with coverage (terminal + HTML report)
+	pnpm --dir frontend coverage
+
 ##@ Code quality
 check: ## Lint and verify formatting (no changes)
 	uv run ruff check . && uv run ruff format --check .
@@ -41,5 +47,5 @@ format: ## Auto-format the codebase
 ##@ Help
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} \
-		/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 } \
+		/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
 		/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' $(MAKEFILE_LIST)
