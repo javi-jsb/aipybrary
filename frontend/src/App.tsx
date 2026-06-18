@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
+import { BookCopies } from "./components/BookCopies";
 import { BookForm } from "./components/BookForm";
 import { BooksList } from "./components/BooksList";
 import { MemberDetail } from "./components/MemberDetail";
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/books" element={<BooksList />} />
         <Route path="/books/new" element={<BookForm />} />
         <Route path="/books/:id/edit" element={<BookForm />} />
+        <Route path="/books/:id/copies" element={<BookCopies />} />
         <Route path="/members" element={<MembersList />} />
         <Route path="/members/new" element={<MemberForm />} />
         <Route path="/members/:id" element={<MemberDetail />} />
