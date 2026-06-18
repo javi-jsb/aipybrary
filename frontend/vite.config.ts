@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -8,6 +8,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Playwright specs under e2e/ are *.spec.ts too; keep them out of Vitest
+    // (they run via `pnpm test:e2e`, not the unit runner).
+    exclude: [...configDefaults.exclude, "e2e/**"],
     // Tailwind classes are irrelevant to behaviour; skip CSS processing for speed.
     css: false,
     coverage: {

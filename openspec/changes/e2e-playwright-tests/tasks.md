@@ -9,11 +9,11 @@
 
 ## 2. Test data & isolation (sub-issue 2)
 
-- [ ] 2.1 Provision a dedicated `aipybrary_e2e` logical database on the same Postgres engine, schema-migrated via the existing Alembic migrations
-- [ ] 2.2 Point the `webServer`-started API process at the E2E database via environment configuration; fail fast if the target DB is not the dedicated E2E one
-- [ ] 2.3 Implement a deterministic seed for E2E (reusing the existing `database-seeding` capability where possible)
-- [ ] 2.4 Implement a truncate + re-seed reset between specs/workers so specs are order-independent; tune granularity based on observed runtime
-- [ ] 2.5 Implement a reusable login/JWT fixture with role-scoped sessions for `admin`, `staff`, and `member`
+- [x] 2.1 Provision a dedicated `aipybrary_e2e` logical database on the same Postgres engine, schema-migrated via the existing Alembic migrations (`scripts/e2e_db.py provision`, `make db-e2e-provision`, Playwright `globalSetup`)
+- [x] 2.2 Point the `webServer`-started API process at the E2E database via environment configuration (`make e2e-api` sets `POSTGRES_DB`); fail fast if the target DB is not the dedicated E2E one (guard in `scripts/e2e_db.py`)
+- [x] 2.3 Implement a deterministic seed for E2E (single shared password hash; reuses the same domain models as `scripts/seed.py`)
+- [x] 2.4 Implement a truncate + re-seed reset between specs (auto `resetDb` fixture in `e2e/fixtures.ts` → `make db-e2e-reset`)
+- [x] 2.5 Implement a reusable login/JWT fixture with role-scoped sessions for `admin`, `staff`, and `member` (`loginAs` in `e2e/fixtures.ts`)
 
 ## 3. Flows per area (sub-issue 3)
 

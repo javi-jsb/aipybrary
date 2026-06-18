@@ -37,9 +37,12 @@ export default tseslint.config([
   },
   {
     // Playwright config and E2E specs run under Node, not Vite/Fast Refresh.
+    // The Playwright fixture parameter `use` trips the React Hooks rule, which
+    // doesn't apply here.
     files: ["playwright.config.ts", "e2e/**"],
     rules: {
       "react-refresh/only-export-components": "off",
+      "react-hooks/rules-of-hooks": "off",
     },
   },
 ]);
