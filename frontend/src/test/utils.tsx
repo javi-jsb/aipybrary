@@ -3,7 +3,7 @@ import { render, type RenderResult } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import { AuthProvider } from "../auth/AuthProvider";
-import type { Book, BookCopy, Member, User } from "../api/types";
+import type { Book, BookCopy, Loan, Member, User } from "../api/types";
 
 interface RenderOptions {
   /** Initial history stack for the in-memory router (default `["/"]`). */
@@ -97,6 +97,23 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     status: "active",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** A complete `Loan` (an active one by default), with fields overridable per
+ * test. The `status` defaults to `active`; override it together with
+ * `returned_at` to model a returned loan. */
+export function makeLoan(overrides: Partial<Loan> = {}): Loan {
+  return {
+    id: "loan-1",
+    member_id: "member-1",
+    book_copy_id: "copy-1",
+    due_date: "2026-07-01T00:00:00Z",
+    returned_at: null,
+    status: "active",
+    created_at: "2026-06-01T00:00:00Z",
+    updated_at: "2026-06-01T00:00:00Z",
     ...overrides,
   };
 }
