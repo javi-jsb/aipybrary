@@ -232,8 +232,14 @@ Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. 
 
 Tests exercise behaviour through the public seams: `fetch` is stubbed with `vi.stubGlobal` (no MSW yet) and assertions go through the real `apiClient`, `tokenStore`, and `AuthProvider` rather than mocking them. Coverage is **reported, not gated** — the seams and logic (`apiClient`, `tokenStore`) should stay near 100%, while UI components are best-effort; there is no failing threshold, so don't chase defensive branches.
 
+#### End-to-end tests (Playwright)
+
+A separate **end-to-end** layer (`e2e-playwright-tests` OpenSpec change, umbrella #93) drives the real SPA in a real Chromium browser — the gap Vitest's stubbed `fetch` can't cover. Specs live in `frontend/e2e/` as `*.spec.ts` and use `@playwright/test` (pinned, Chromium-only); config is `frontend/playwright.config.ts`. Run with `pnpm test:e2e` (from `/frontend`) or `make e2e-frontend`. **Local execution only — no CI integration.** Chromium must be installed once with `pnpm exec playwright install chromium` (the binary is not committed).
+
+The harness currently boots **only the Vite-served SPA** via Playwright's `webServer` (`reuseExistingServer` reuses a running `pnpm dev`); the smoke spec asserts the login screen renders without touching the API. Orchestrating the FastAPI server + a dedicated `aipybrary_e2e` database (migrations, seed, between-spec reset) and the backend-dependent flows arrive in the following slices (#97, #98).
+
 ## AI Collaboration Rules
 
 **Debate before executing.** If something seems wrong, missing, inconsistent, or improvable, raise it and discuss options before proceeding. Do not execute blindly.
 
-**Keep this file up to date.** If during development a decision is made, a convention is added, or anything worth documenting changes, update `CLAUDE.md` accordingly in the same PR where the change happens.
+**Keep docs up to date — but don't conflate `CLAUDE.md` and `README.md`.** When a decision, convention, or anything worth documenting changes, update `CLAUDE.md` in the same PR; likewise update the `README.md` when a change affects it. They serve **different audiences and must not be mixed**: `CLAUDE.md` is **internal, agent-facing** guidance (conventions, architecture, workflow), while `README.md` (root, plus `frontend/README.md` for the SPA) is **end-user / contributor-facing** documentation (what the app is, how to set it up and run it). Never copy agent-only detail into the README or vice versa. Keep `CLAUDE.md` **concise — as small as possible**: capture only what's non-obvious and durable, prune what's stale, and prefer tightening an existing line over appending a new one.

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend check format db-up db-down db-down-clean
+.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-frontend check format db-up db-down db-down-clean
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
@@ -36,6 +36,9 @@ test-frontend: ## Run the frontend test suite (Vitest) from /frontend
 
 coverage-frontend: ## Run frontend tests with coverage (terminal + HTML report)
 	pnpm --dir frontend coverage
+
+e2e-frontend: ## Run the end-to-end test suite (Playwright) from /frontend
+	pnpm --dir frontend test:e2e
 
 ##@ Code quality
 check: ## Lint and verify formatting (no changes)

@@ -7,7 +7,7 @@ import prettier from "eslint-config-prettier";
 import { globalIgnores } from "eslint/config";
 
 export default tseslint.config([
-  globalIgnores(["dist", "coverage"]),
+  globalIgnores(["dist", "coverage", "test-results", "playwright-report"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -31,6 +31,13 @@ export default tseslint.config([
     // Test files and helpers export non-component utilities; the Fast Refresh
     // rule is irrelevant to them.
     files: ["**/*.test.{ts,tsx}", "src/test/**"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // Playwright config and E2E specs run under Node, not Vite/Fast Refresh.
+    files: ["playwright.config.ts", "e2e/**"],
     rules: {
       "react-refresh/only-export-components": "off",
     },

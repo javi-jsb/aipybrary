@@ -1,11 +1,11 @@
 ## 1. Harness & tooling (sub-issue 1)
 
-- [ ] 1.1 Add `@playwright/test` to `/frontend` as an exact-pinned dev dependency; commit `pnpm-lock.yaml` (dependency diff reviewed per policy)
-- [ ] 1.2 Install Chromium via `playwright install chromium` and document the one-time step
-- [ ] 1.3 Add `playwright.config.ts` with Chromium-only project, traces/screenshots on failure, and base URL pointing at the Vite-served SPA
-- [ ] 1.4 Configure Playwright `webServer` to boot Postgres, the FastAPI server on `:8077`, and the Vite SPA for a run (reusing an already-running server locally where possible)
-- [ ] 1.5 Add a `test:e2e` script to `frontend/package.json` that runs the suite headless; optionally expose a `make` target
-- [ ] 1.6 Create the `e2e/` test directory and add a smoke spec that loads the app and asserts the login screen renders
+- [x] 1.1 Add `@playwright/test` to `/frontend` as an exact-pinned dev dependency; commit `pnpm-lock.yaml` (dependency diff reviewed per policy)
+- [x] 1.2 Install Chromium via `playwright install chromium` and document the one-time step
+- [x] 1.3 Add `playwright.config.ts` with Chromium-only project, traces/screenshots on failure, and base URL pointing at the Vite-served SPA
+- [x] 1.4 Configure Playwright `webServer` to boot the Vite SPA (reusing an already-running server locally where possible). NOTE: booting Postgres + FastAPI on `:8077` is inseparable from the dedicated E2E database and moves to the data/isolation slice (group 2 / #97)
+- [x] 1.5 Add a `test:e2e` script to `frontend/package.json` that runs the suite headless; optionally expose a `make` target
+- [x] 1.6 Create the `e2e/` test directory and add a smoke spec that loads the app and asserts the login screen renders
 
 ## 2. Test data & isolation (sub-issue 2)
 
