@@ -232,6 +232,12 @@ Frontend tests use **Vitest + React Testing Library** in a `jsdom` environment. 
 
 Tests exercise behaviour through the public seams: `fetch` is stubbed with `vi.stubGlobal` (no MSW yet) and assertions go through the real `apiClient`, `tokenStore`, and `AuthProvider` rather than mocking them. Coverage is **reported, not gated** — the seams and logic (`apiClient`, `tokenStore`) should stay near 100%, while UI components are best-effort; there is no failing threshold, so don't chase defensive branches.
 
+#### End-to-end tests (Playwright)
+
+A separate **end-to-end** layer (`e2e-playwright-tests` OpenSpec change, umbrella #93) drives the real SPA in a real Chromium browser — the gap Vitest's stubbed `fetch` can't cover. Specs live in `frontend/e2e/` as `*.spec.ts` and use `@playwright/test` (pinned, Chromium-only); config is `frontend/playwright.config.ts`. Run with `pnpm test:e2e` (from `/frontend`) or `make e2e-frontend`. **Local execution only — no CI integration.** Chromium must be installed once with `pnpm exec playwright install chromium` (the binary is not committed).
+
+The harness currently boots **only the Vite-served SPA** via Playwright's `webServer` (`reuseExistingServer` reuses a running `pnpm dev`); the smoke spec asserts the login screen renders without touching the API. Orchestrating the FastAPI server + a dedicated `aipybrary_e2e` database (migrations, seed, between-spec reset) and the backend-dependent flows arrive in the following slices (#97, #98).
+
 ## AI Collaboration Rules
 
 **Debate before executing.** If something seems wrong, missing, inconsistent, or improvable, raise it and discuss options before proceeding. Do not execute blindly.
