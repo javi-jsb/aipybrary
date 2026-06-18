@@ -94,6 +94,30 @@ export interface BookCopyCreate {
 
 export type BookCopyListResponse = PaginatedResponse<BookCopy>;
 
+/** A loan's lifecycle state. The backend computes it from `returned_at` and
+ * `due_date` (see `LoanPublic.status`), so it is read-only here. */
+export type LoanStatus = "active" | "overdue" | "returned";
+
+export interface Loan {
+  id: string;
+  member_id: string;
+  book_copy_id: string;
+  due_date: string;
+  returned_at: string | null;
+  status: LoanStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Payload for `POST /loans` (borrow): a member takes out a specific copy. The
+ * due date is assigned server-side. */
+export interface LoanCreate {
+  member_id: string;
+  book_copy_id: string;
+}
+
+export type LoanListResponse = PaginatedResponse<Loan>;
+
 export interface LoginRequest {
   username: string;
   password: string;

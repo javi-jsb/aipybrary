@@ -39,12 +39,12 @@
 
 ## 5. Loans
 
-- [ ] 5.1 Add `Loan` types and typed call functions (list, borrow, return)
-- [ ] 5.2 Loans list view (`useQuery`)
-- [ ] 5.3 Borrow form/action (select member + available copy), invalidating loans and availability
-- [ ] 5.4 Return action, reflecting the loan as returned
-- [ ] 5.5 Surface business-rule errors (no available copy, active-loan limit) on the form
-- [ ] 5.6 Gate loan actions by role
+- [x] 5.1 Add `Loan` types and typed call functions (list, borrow, return)
+- [x] 5.2 Loans list view (`useQuery`)
+- [x] 5.3 Borrow form/action (select member + available copy), invalidating loans and availability
+- [x] 5.4 Return action, reflecting the loan as returned
+- [x] 5.5 Surface business-rule errors (no available copy, active-loan limit) on the form
+- [x] 5.6 Gate loan actions by role
 
 ## 6. Documentation
 
