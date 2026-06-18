@@ -176,7 +176,9 @@ The frontend SPA calls the API directly cross-origin (browser at the Vite dev or
 
 ## Frontend
 
-A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (full Books CRUD, Members management, book-copy management, and loans (borrow/return) done).
+A self-contained browser SPA lives under `/frontend` (Option A: the backend stays at the repo root, untouched). It exists to visualize and exercise the API. Authentication is in place (log in, hold a JWT) behind a routed, authenticated layout; entity views are being built out incrementally per the `frontend-api-parity` OpenSpec change (full Books CRUD, Members management, book-copy management, and loans (borrow/return) done). A routed `Help` screen (`/help`, reachable from the nav) documents every feature and the role capability matrix.
+
+**Help section maintenance rule.** Any change that adds or removes a feature, or alters role permissions, **must update the Help section (`src/components/HelpScreen.tsx`) in the same PR** so it stays current. The capability matrix derives its ✓/— cells by calling the real `roles.ts` predicates, so permission-value changes flow through automatically; what still needs a manual edit is adding/removing a feature row or its prose note.
 
 ### Stack
 

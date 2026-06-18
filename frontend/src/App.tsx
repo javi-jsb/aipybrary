@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router";
 import { BookCopies } from "./components/BookCopies";
 import { BookForm } from "./components/BookForm";
 import { BooksList } from "./components/BooksList";
+import { HelpScreen } from "./components/HelpScreen";
 import { MemberDetail } from "./components/MemberDetail";
 import { MemberForm } from "./components/MemberForm";
 import { MembersList } from "./components/MembersList";
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/members/:id/edit" element={<MemberForm />} />
         <Route path="/loans" element={<LoansList />} />
         <Route path="/loans/new" element={<LoanForm />} />
+        <Route path="/help" element={<HelpScreen />} />
         <Route index element={<Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />} />
       </Route>
       <Route path="*" element={<Navigate to={DEFAULT_AUTHENTICATED_ROUTE} replace />} />
