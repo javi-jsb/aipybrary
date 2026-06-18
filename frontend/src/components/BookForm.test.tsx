@@ -91,6 +91,24 @@ describe("BookForm — create", () => {
     expect(await screen.findByText("Books list")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("fills the ISBN field with a valid value when Generate is clicked", async () => {
+    const user = userEvent.setup();
+    renderForm(["/books/new"]);
+
+    await user.click(screen.getByRole("button", { name: "Generate" }));
+
+    const isbnInput = screen.getByLabelText("ISBN") as HTMLInputElement;
+    expect(isbnInput.value).toMatch(/^978[0-9]{10}$/);
+
+    // The generated value passes client validation, so submission goes through.
+    fetchMock.mockResolvedValue(jsonResponse(makeBook(), 201));
+    await user.type(screen.getByLabelText("Title"), "Dune");
+    await user.type(screen.getByLabelText("Author"), "Frank Herbert");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Books list")).toBeInTheDocument();
+  });
 });
 
 describe("BookForm — edit", () => {

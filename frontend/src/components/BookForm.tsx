@@ -6,6 +6,7 @@ import { apiErrorToFormMessage } from "../api/errors";
 import type { Book, BookCreate } from "../api/types";
 import {
   EMPTY_BOOK_FORM_VALUES,
+  generateIsbn13,
   validateBookForm,
   type BookFieldErrors,
   type BookFormValues,
@@ -144,14 +145,24 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
           <label htmlFor="isbn" className="block text-sm font-medium text-slate-700">
             ISBN
           </label>
-          <input
-            id="isbn"
-            value={values.isbn}
-            onChange={(e) => update("isbn", e.target.value)}
-            aria-invalid={fieldErrors.isbn !== undefined}
-            aria-describedby={fieldErrors.isbn ? "isbn-error" : undefined}
-            className={fieldClass(fieldErrors.isbn)}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              id="isbn"
+              value={values.isbn}
+              onChange={(e) => update("isbn", e.target.value)}
+              aria-invalid={fieldErrors.isbn !== undefined}
+              aria-describedby={fieldErrors.isbn ? "isbn-error" : undefined}
+              className={fieldClass(fieldErrors.isbn)}
+            />
+            <button
+              type="button"
+              onClick={() => update("isbn", generateIsbn13())}
+              className="shrink-0 rounded-md border border-slate-300 px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              title="Fill with a random valid ISBN-13"
+            >
+              Generate
+            </button>
+          </div>
           <FieldError id="isbn-error" message={fieldErrors.isbn} />
         </div>
 

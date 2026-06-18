@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   EMPTY_BOOK_FORM_VALUES,
+  generateIsbn13,
   validateBookForm,
   validateIsbn,
   type BookFormValues,
@@ -9,6 +10,16 @@ import {
 function values(overrides: Partial<BookFormValues> = {}): BookFormValues {
   return { ...EMPTY_BOOK_FORM_VALUES, title: "T", author: "A", ...overrides };
 }
+
+describe("generateIsbn13", () => {
+  it("produces a 13-digit ISBN that always passes validateIsbn", () => {
+    for (let i = 0; i < 200; i++) {
+      const isbn = generateIsbn13();
+      expect(isbn).toMatch(/^978[0-9]{10}$/);
+      expect(validateIsbn(isbn)).toBeNull();
+    }
+  });
+});
 
 describe("validateIsbn", () => {
   it("accepts valid ISBN-13 (with or without hyphens)", () => {
