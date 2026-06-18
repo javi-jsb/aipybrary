@@ -50,7 +50,7 @@ Commits within a PR must be grouped by logical section, not bundled into a singl
 - Merge strategy: **squash merge** — keeps `main` history linear; GitHub uses the PR title as the resulting commit message
 - After merging, always pull `main` locally and delete the merged branch:
   ```bash
-  git checkout main && git pull origin main && git branch -d <branch>
+  git checkout main && git pull origin main && git branch -D <branch>
   ```
 
 ### OpenSpec workflow
