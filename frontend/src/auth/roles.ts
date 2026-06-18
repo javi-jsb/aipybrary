@@ -16,6 +16,10 @@ const MEMBER_DELETER_ROLES: readonly UserRole[] = ["admin"];
  * the books matrix it currently mirrors. */
 const COPY_MANAGER_ROLES: readonly UserRole[] = ["admin", "staff"];
 
+/** Roles allowed to borrow and return loans. Pinned per entity slice; mirrors
+ * the staff-facing catalog roles (a `member` views loans read-only). */
+const LOAN_MANAGER_ROLES: readonly UserRole[] = ["admin", "staff"];
+
 /**
  * Whether the given role may see the book create/edit/delete controls.
  *
@@ -52,4 +56,12 @@ export function canDeleteMembers(role: UserRole | undefined): boolean {
  */
 export function canManageCopies(role: UserRole | undefined): boolean {
   return role !== undefined && COPY_MANAGER_ROLES.includes(role);
+}
+
+/**
+ * Whether the given role may see the borrow/return controls. Same UX-only caveat
+ * as {@link canManageBooks}: it hides controls, it is not a security boundary.
+ */
+export function canManageLoans(role: UserRole | undefined): boolean {
+  return role !== undefined && LOAN_MANAGER_ROLES.includes(role);
 }

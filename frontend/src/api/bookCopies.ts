@@ -13,6 +13,12 @@ export function getBookCopies(bookId: string): Promise<BookCopyListResponse> {
   return apiClient<BookCopyListResponse>(`/book-copies?${query.toString()}`);
 }
 
+/** GET /book-copies/{id} — a single copy, used to resolve a loan's copy to its
+ * barcode and owning book in the loans view. */
+export function getBookCopy(id: string): Promise<BookCopy> {
+  return apiClient<BookCopy>(`/book-copies/${id}`);
+}
+
 /** POST /book-copies — add a copy (201). Throws `ApiError` 409 on a duplicate
  * barcode, 422 when `book_id` does not reference an existing book. */
 export function createBookCopy(data: BookCopyCreate): Promise<BookCopy> {
