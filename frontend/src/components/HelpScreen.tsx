@@ -7,8 +7,8 @@ import {
   canManageMembers,
 } from "../auth/roles";
 
-/** The roles, in capability order (broadest first), used as the matrix columns. */
-const ROLES: readonly UserRole[] = ["admin", "staff", "member"];
+/** The roles, in capability order (narrowest first), used as the matrix columns. */
+const ROLES: readonly UserRole[] = ["member", "staff", "admin"];
 
 interface Capability {
   /** Human label for the matrix row. */
