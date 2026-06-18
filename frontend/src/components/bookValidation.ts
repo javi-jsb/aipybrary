@@ -52,6 +52,19 @@ export function validateIsbn(raw: string): string | null {
   return "ISBN must be 10 or 13 digits after removing hyphens.";
 }
 
+/** Generate a random, format-valid ISBN-13: the `978` prefix, 9 random digits,
+ * and the mod-10 check digit. Its output always passes {@link validateIsbn}; it
+ * exists so the form can offer a "Generate" shortcut without weakening the rule. */
+export function generateIsbn13(): string {
+  const digits = [9, 7, 8];
+  for (let i = 0; i < 9; i++) digits.push(Math.floor(Math.random() * 10));
+  let total = 0;
+  for (let i = 0; i < 12; i++) total += digits[i] * (i % 2 === 0 ? 1 : 3);
+  const check = (10 - (total % 10)) % 10;
+  digits.push(check);
+  return digits.join("");
+}
+
 /** Per-field validation for the book form. An empty map means the values are
  * safe to submit. Optional fields (ISBN, year, synopsis) are only validated
  * when provided. */
