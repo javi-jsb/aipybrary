@@ -2,8 +2,9 @@
 
 The E2E suite (Playwright) runs the real API against a dedicated logical
 database, kept separate from the dev and backend-pytest databases. The target
-database name comes from ``POSTGRES_DB`` — the Makefile targets override it to
-the dedicated E2E database before invoking this script.
+database name comes from ``POSTGRES_DB`` — the Playwright harness (global setup
+and the reset fixture) sets it to the dedicated E2E database before invoking
+this script.
 
 Commands:
 - ``provision``: create the database if missing, migrate it to ``head``, then
@@ -60,7 +61,7 @@ def _require_e2e_database() -> None:
     if not settings.POSTGRES_DB.endswith("e2e"):
         sys.exit(
             f"refusing to run: POSTGRES_DB={settings.POSTGRES_DB!r} is not an E2E database. "
-            "Run via the Makefile (make db-e2e-provision / db-e2e-reset), which sets it."
+            "It is set by the Playwright harness; run the suite with `make e2e-frontend`."
         )
 
 

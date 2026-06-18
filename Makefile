@@ -1,12 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-setup e2e-frontend e2e-api db-e2e-provision db-e2e-reset check format db-up db-down db-down-clean
-
-# Dedicated E2E database, API port, and SPA port — kept off the dev defaults
-# (8077 / 5173) so the E2E stack never collides with a running `make dev` /
-# `make dev-frontend`.
-E2E_DB ?= aipybrary_e2e
-E2E_API_PORT ?= 8078
-E2E_APP_PORT ?= 5273
+.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-setup e2e-frontend check format db-up db-down db-down-clean
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
@@ -50,15 +43,6 @@ e2e-setup: ## One-time E2E setup: install frontend deps + the Chromium browser
 
 e2e-frontend: ## Run the end-to-end test suite (Playwright) from /frontend
 	pnpm --dir frontend test:e2e
-
-e2e-api: ## Run the FastAPI server against the E2E database (used by Playwright's webServer)
-	POSTGRES_DB=$(E2E_DB) CORS_ALLOW_ORIGINS=http://localhost:$(E2E_APP_PORT) uv run fastapi dev --port $(E2E_API_PORT)
-
-db-e2e-provision: ## Create + migrate + seed the dedicated E2E database
-	POSTGRES_DB=$(E2E_DB) uv run python scripts/e2e_db.py provision
-
-db-e2e-reset: ## Truncate + re-seed the E2E database (between-spec reset)
-	POSTGRES_DB=$(E2E_DB) uv run python scripts/e2e_db.py reset
 
 ##@ Code quality
 check: ## Lint and verify formatting (no changes)

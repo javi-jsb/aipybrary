@@ -1,11 +1,20 @@
 import { defineConfig, devices } from "@playwright/test";
+import {
+  API_BASE_URL,
+  API_PORT,
+  APP_BASE_URL,
+  APP_PORT,
+  backendEnv,
+  REPO_ROOT,
+} from "./e2e/config";
 
 /**
  * End-to-end test configuration.
  *
  * These tests drive the real SPA in a real browser against the real API and a
- * dedicated E2E Postgres database (see the `e2e-playwright-tests` OpenSpec
- * change). `webServer` boots both tiers on dedicated ports so the E2E stack
+ * dedicated E2E Postgres database (see the archived `e2e-playwright-tests`
+ * change / the `e2e-testing` spec). The harness is self-contained: `webServer`
+ * spawns both tiers directly (no Makefile indirection) on dedicated ports so it
  * never collides with a running `make dev` / `make dev-frontend`:
  *   - the FastAPI API on :8078, pointed at the `aipybrary_e2e` database;
  *   - the Vite-served SPA on :5273, configured to call that API.
@@ -14,11 +23,6 @@ import { defineConfig, devices } from "@playwright/test";
  * the per-test reset lives in `e2e/fixtures.ts`. Postgres itself must be
  * running (`make db-up`).
  */
-const API_PORT = 8078;
-const APP_PORT = 5273;
-const API_BASE_URL = `http://localhost:${API_PORT}`;
-const APP_BASE_URL = `http://localhost:${APP_PORT}`;
-
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "**/*.spec.ts",
@@ -34,15 +38,16 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: "make e2e-api",
-      cwd: "..",
+      command: `uv run fastapi dev --port ${API_PORT}`,
+      cwd: REPO_ROOT,
+      env: backendEnv,
       url: `${API_BASE_URL}/health`,
       reuseExistingServer: false,
       timeout: 120_000,
     },
     {
       command: `pnpm dev --port ${APP_PORT} --strictPort`,
-      env: { VITE_API_BASE_URL: API_BASE_URL },
+      env: { ...process.env, VITE_API_BASE_URL: API_BASE_URL },
       url: APP_BASE_URL,
       reuseExistingServer: false,
       timeout: 120_000,

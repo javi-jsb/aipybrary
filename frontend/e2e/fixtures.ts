@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
-import { resolve } from "node:path";
 import { test as base, expect, type APIRequestContext } from "@playwright/test";
+import { API_BASE_URL, backendEnv, REPO_ROOT } from "./config";
 
 /**
  * Shared E2E fixtures (see the `e2e-playwright-tests` OpenSpec change):
@@ -15,10 +15,7 @@ import { test as base, expect, type APIRequestContext } from "@playwright/test";
  * Import `test`/`expect` from this module (not `@playwright/test`) in any spec
  * that needs a clean database or an authenticated session.
  */
-const repoRoot = resolve(process.cwd(), "..");
-
-// Must match playwright.config.ts (API port) and the seed (e2e_db.py credentials).
-const API_BASE_URL = "http://localhost:8078";
+// Must match the seed (scripts/e2e_db.py credentials).
 const TOKEN_KEY = "aipybrary.access_token";
 const E2E_PASSWORD = "pass";
 
@@ -49,7 +46,11 @@ export const test = base.extend<Fixtures>({
   resetDb: [
     // eslint-disable-next-line no-empty-pattern -- auto fixture takes no dependencies
     async ({}, use) => {
-      execSync("make db-e2e-reset", { cwd: repoRoot, stdio: "pipe" });
+      execSync("uv run python scripts/e2e_db.py reset", {
+        cwd: REPO_ROOT,
+        stdio: "pipe",
+        env: backendEnv,
+      });
       await use();
     },
     { auto: true },
