@@ -17,15 +17,15 @@
 
 ## 3. Flows per area (sub-issue 3)
 
-- [ ] 3.1 Auth: successful login navigates to the authenticated app; invalid credentials surface an error
-- [ ] 3.2 Books CRUD: create, edit, and delete a book; assert each reflected in list/detail views
-- [ ] 3.3 Members: create a member and assert the one-time initial password is shown once and absent on subsequent reads; cover edit
-- [ ] 3.4 Book copies: add and remove copies; assert the copies view reflects changes
-- [ ] 3.5 Loans: borrow and return a copy; assert success and that a business-rule violation surfaces its error
-- [ ] 3.6 Role-aware visibility: assert role-gated controls are shown/hidden per role across the covered areas
+- [x] 3.1 Auth: successful login navigates to the authenticated app; invalid credentials surface an error (`e2e/auth.spec.ts`)
+- [x] 3.2 Books CRUD: create, edit, and delete a book; assert each reflected in the list (`e2e/books.spec.ts`)
+- [x] 3.3 Members: create a member and assert the one-time initial password is shown once and absent on a subsequent read (`e2e/members.spec.ts`)
+- [x] 3.4 Book copies: add and remove a copy; assert the copies view reflects changes (`e2e/copies.spec.ts`)
+- [x] 3.5 Loans: borrow and return a copy; assert success and that a business-rule violation (active-loan limit) surfaces its error (`e2e/loans.spec.ts`)
+- [x] 3.6 Role-aware visibility: assert role-gated controls are shown for admin and hidden for member across the covered areas (`e2e/roles.spec.ts`)
 
 ## 4. Wrap-up
 
-- [ ] 4.1 Update CLAUDE.md (Frontend → Testing) to describe the E2E layer, the `test:e2e` entry point, and the dedicated E2E database
-- [ ] 4.2 Open the per-area sub-issues under umbrella #93 mapping to task groups 1–3
-- [ ] 4.3 Verify the full suite runs green locally end-to-end (Chromium, headless)
+- [x] 4.1 Update CLAUDE.md (Frontend → Testing) to describe the E2E layer, the `test:e2e` entry point, and the dedicated E2E database
+- [x] 4.2 Open the per-area sub-issues under umbrella #93 mapping to task groups 1–3 (#96, #97, #98)
+- [x] 4.3 Verify the full suite runs green locally end-to-end (Chromium, headless) — 15 passed
