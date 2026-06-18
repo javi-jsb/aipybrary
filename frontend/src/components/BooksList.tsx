@@ -32,44 +32,53 @@ function BookRow({ book, canManage }: BookRowProps) {
           )}
         </div>
 
-        {canManage && (
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              to={`/books/${book.id}/edit`}
-              className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Edit
-            </Link>
-            {confirming ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate()}
-                  disabled={remove.isPending}
-                  className="rounded-md bg-red-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
-                >
-                  {remove.isPending ? "Deleting…" : "Confirm"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  disabled={remove.isPending}
-                  className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                className="rounded-md border border-red-300 px-2.5 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to={`/books/${book.id}/copies`}
+            className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Copies ({book.copies_available}/{book.copies_total})
+          </Link>
+
+          {canManage && (
+            <>
+              <Link
+                to={`/books/${book.id}/edit`}
+                className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
-                Delete
-              </button>
-            )}
-          </div>
-        )}
+                Edit
+              </Link>
+              {confirming ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => remove.mutate()}
+                    disabled={remove.isPending}
+                    className="rounded-md bg-red-600 px-2.5 py-1 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                  >
+                    {remove.isPending ? "Deleting…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    disabled={remove.isPending}
+                    className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirming(true)}
+                  className="rounded-md border border-red-300 px-2.5 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
+                  Delete
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {remove.isError && (

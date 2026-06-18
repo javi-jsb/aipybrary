@@ -31,11 +31,11 @@
 
 ## 4. Book copies
 
-- [ ] 4.1 Add `BookCopy` types and typed call functions (list per book, add, remove)
-- [ ] 4.2 Copies view for a book (`useQuery`)
-- [ ] 4.3 Add-copy action, invalidating the copies and the book's availability
-- [ ] 4.4 Remove-copy action with appropriate error handling
-- [ ] 4.5 Gate copy actions by role
+- [x] 4.1 Add `BookCopy` types and typed call functions (list per book, add, remove)
+- [x] 4.2 Copies view for a book (`useQuery`)
+- [x] 4.3 Add-copy action, invalidating the copies and the book's availability
+- [x] 4.4 Remove-copy action with appropriate error handling
+- [x] 4.5 Gate copy actions by role
 
 ## 5. Loans
 

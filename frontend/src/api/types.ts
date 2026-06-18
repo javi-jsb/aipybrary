@@ -72,6 +72,28 @@ export interface MemberCreateResponse extends Member {
 
 export type MemberListResponse = PaginatedResponse<Member>;
 
+export interface BookCopy {
+  id: string;
+  book_id: string;
+  barcode: string;
+  location: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Payload for `POST /book-copies`. A copy is created against a book and carries
+ * a unique `barcode`; `location`/`notes` are optional. A copy is not
+ * reassignable, so `book_id` is only ever sent on create. */
+export interface BookCopyCreate {
+  book_id: string;
+  barcode: string;
+  location: string | null;
+  notes: string | null;
+}
+
+export type BookCopyListResponse = PaginatedResponse<BookCopy>;
+
 export interface LoginRequest {
   username: string;
   password: string;
