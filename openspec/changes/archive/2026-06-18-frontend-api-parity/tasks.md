@@ -48,11 +48,11 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update root `CLAUDE.md` frontend section: routing, TanStack Query data layer, role-aware UI, new structure
-- [ ] 6.2 Update `frontend/README.md`: routing/data-layer overview and any new scripts
+- [x] 6.1 Update root `CLAUDE.md` frontend section: routing, TanStack Query data layer, role-aware UI, new structure
+- [x] 6.2 Update `frontend/README.md`: routing/data-layer overview and any new scripts
 
 ## 7. Verification
 
-- [ ] 7.1 With the backend running and seeded data, exercise each entity's actions end-to-end against the API
-- [ ] 7.2 Confirm lists refresh after mutations (cache invalidation) and that error/role paths behave per the spec scenarios
-- [ ] 7.3 `pnpm build`, `pnpm lint`, `pnpm format:check` all green
+- [x] 7.1 With the backend running and seeded data, exercise each entity's actions end-to-end against the API
+- [x] 7.2 Confirm lists refresh after mutations (cache invalidation) and that error/role paths behave per the spec scenarios
+- [x] 7.3 `pnpm build`, `pnpm lint`, `pnpm format:check` all green
