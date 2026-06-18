@@ -97,13 +97,17 @@ async def _truncate_and_seed() -> None:
         staff = User(email=STAFF_EMAIL, password_hash=password_hash, role=UserRole.staff, is_active=True)
         member_user = User(email=MEMBER_EMAIL, password_hash=password_hash, role=UserRole.member, is_active=True)
         ada_user = User(email="ada@e2e.test", password_hash=password_hash, role=UserRole.member, is_active=True)
-        session.add_all([admin, staff, member_user, ada_user])
+        maxed_user = User(email="maxed@e2e.test", password_hash=password_hash, role=UserRole.member, is_active=True)
+        session.add_all([admin, staff, member_user, ada_user, maxed_user])
         await session.flush()  # assign user ids before linking members
 
         # ----- Members: linked to the member-role users -----
         demo_member = Member(full_name="Demo Member", status=MemberStatus.active, user_id=member_user.id)
         ada = Member(full_name="Ada Lovelace", status=MemberStatus.active, user_id=ada_user.id)
-        session.add_all([demo_member, ada])
+        # "Maxed Member" already holds the maximum active loans, so a further
+        # borrow attempt surfaces the loan-limit business-rule error in the UI.
+        maxed = Member(full_name="Maxed Member", status=MemberStatus.active, user_id=maxed_user.id)
+        session.add_all([demo_member, ada, maxed])
 
         # ----- Books -----
         quixote = Book.model_validate(
@@ -125,19 +129,24 @@ async def _truncate_and_seed() -> None:
         session.add_all([quixote, crime])
         await session.flush()  # assign book ids before linking copies
 
-        # ----- Book copies: one on loan, two available -----
+        # ----- Book copies: one on loan, two available, three held by Maxed Member -----
         dq_on_loan = BookCopy(book_id=quixote.id, barcode="DQ-001")
         dq_available = BookCopy(book_id=quixote.id, barcode="DQ-002")
         cp_available = BookCopy(book_id=crime.id, barcode="CP-001")
-        session.add_all([dq_on_loan, dq_available, cp_available])
+        maxed_copies = [BookCopy(book_id=crime.id, barcode=f"MX-{n:03d}") for n in range(1, 4)]
+        session.add_all([dq_on_loan, dq_available, cp_available, *maxed_copies])
         await session.flush()  # assign copy ids before linking loans
 
-        # ----- Loans: one active loan (DQ-001) to exercise the return flow;
-        #       DQ-002 and CP-001 stay available to exercise the borrow flow. -----
-        session.add(Loan(member_id=ada.id, book_copy_id=dq_on_loan.id, due_date=_utcnow() + timedelta(days=10)))
+        # ----- Loans -----
+        due = _utcnow() + timedelta(days=10)
+        # One active loan (DQ-001) to exercise the return flow; DQ-002 and CP-001
+        # stay available to exercise the borrow flow.
+        session.add(Loan(member_id=ada.id, book_copy_id=dq_on_loan.id, due_date=due))
+        # Maxed Member at the active-loan limit — drives the loan-limit error path.
+        session.add_all([Loan(member_id=maxed.id, book_copy_id=copy.id, due_date=due) for copy in maxed_copies])
 
         await session.commit()
-    print("Seeded E2E database (4 users, 2 members, 2 books, 3 copies, 1 active loan).")
+    print("Seeded E2E database (5 users, 3 members, 2 books, 6 copies, 4 active loans).")
 
 
 def provision() -> None:
