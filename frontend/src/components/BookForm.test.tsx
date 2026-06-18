@@ -24,6 +24,8 @@ function renderForm(initialEntries: string[]) {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  // Restore any per-test env stubbing (e.g. the production-mode case below).
+  vi.unstubAllEnvs();
   setToken("tok");
 });
 
@@ -108,6 +110,15 @@ describe("BookForm — create", () => {
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByText("Books list")).toBeInTheDocument();
+  });
+
+  it("hides the Generate button in production builds", () => {
+    vi.stubEnv("DEV", false);
+    renderForm(["/books/new"]);
+
+    expect(screen.queryByRole("button", { name: "Generate" })).not.toBeInTheDocument();
+    // The ISBN field itself stays — only the dev shortcut is gone.
+    expect(screen.getByLabelText("ISBN")).toBeInTheDocument();
   });
 });
 

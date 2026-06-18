@@ -154,14 +154,18 @@ function BookFormFields({ bookId, initial }: FieldsProps) {
               aria-describedby={fieldErrors.isbn ? "isbn-error" : undefined}
               className={fieldClass(fieldErrors.isbn)}
             />
-            <button
-              type="button"
-              onClick={() => update("isbn", generateIsbn13())}
-              className="shrink-0 rounded-md border border-slate-300 px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              title="Fill with a random valid ISBN-13"
-            >
-              Generate
-            </button>
+            {/* Dev-only convenience: hidden in production builds
+                (`import.meta.env.DEV` is false there). */}
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={() => update("isbn", generateIsbn13())}
+                className="shrink-0 rounded-md border border-slate-300 px-2.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                title="Fill with a random valid ISBN-13"
+              >
+                Generate
+              </button>
+            )}
           </div>
           <FieldError id="isbn-error" message={fieldErrors.isbn} />
         </div>
