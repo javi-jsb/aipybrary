@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-frontend e2e-api db-e2e-provision db-e2e-reset check format db-up db-down db-down-clean
+.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-setup e2e-frontend e2e-api db-e2e-provision db-e2e-reset check format db-up db-down db-down-clean
 
 # Dedicated E2E database, API port, and SPA port — kept off the dev defaults
 # (8077 / 5173) so the E2E stack never collides with a running `make dev` /
@@ -44,6 +44,10 @@ test-frontend: ## Run the frontend test suite (Vitest) from /frontend
 coverage-frontend: ## Run frontend tests with coverage (terminal + HTML report)
 	pnpm --dir frontend coverage
 
+e2e-setup: ## One-time E2E setup: install frontend deps + the Chromium browser
+	pnpm --dir frontend install
+	pnpm --dir frontend exec playwright install chromium
+
 e2e-frontend: ## Run the end-to-end test suite (Playwright) from /frontend
 	pnpm --dir frontend test:e2e
 
@@ -66,5 +70,5 @@ format: ## Auto-format the codebase
 ##@ Help
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} \
-		/^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
+		/^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } \
 		/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) }' $(MAKEFILE_LIST)

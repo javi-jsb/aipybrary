@@ -61,6 +61,18 @@ make check       # lint and verify formatting (no changes)
 make format      # fix formatting
 ```
 
+### End-to-end tests (Playwright)
+
+End-to-end tests drive the real SPA in a real browser against the real API and a dedicated database. They run **locally only** (no CI) on Chromium.
+
+```bash
+make e2e-setup     # one-time: install frontend deps + the Chromium browser
+make db-up         # Postgres must be running
+make e2e-frontend  # run the suite (or: pnpm --dir frontend test:e2e)
+```
+
+Playwright boots its own stack on dedicated ports — the API on `:8078` against an `aipybrary_e2e` database (created, migrated, and seeded automatically) and the SPA on `:5273` — so it does not collide with a running `make dev` / `make dev-frontend`. No dev servers need to be running; just keep ports `:8078` and `:5273` free and a `.env` present at the repo root.
+
 ## Architecture
 
 The backend lives at the repo root; the browser SPA is a self-contained app under `/frontend` (React + TS + Tailwind via Vite) that calls the API through a shared `apiClient`.
