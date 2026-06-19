@@ -33,6 +33,10 @@ class SqlModelMemberRepository(MemberRepository):
     async def get_by_id(self, member_id: uuid.UUID) -> Member | None:
         return await self._session.get(Member, member_id)
 
+    async def get_by_user_id(self, user_id: uuid.UUID) -> Member | None:
+        result = await self._session.execute(sa_select(Member).where(Member.user_id == user_id))
+        return result.scalar_one_or_none()
+
     async def get_by_id_with_email(self, member_id: uuid.UUID) -> tuple[Member, str] | None:
         member = await self._session.get(Member, member_id)
         if member is None:
