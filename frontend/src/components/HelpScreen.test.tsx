@@ -34,15 +34,21 @@ describe("HelpScreen", () => {
     expect(within(manageBooks).getAllByLabelText("allowed")).toHaveLength(2);
     expect(within(manageBooks).getAllByLabelText("not allowed")).toHaveLength(1);
 
+    // Viewing the members list is staff-only — a member has no listing.
+    const viewMembers = rowFor("View the members list");
+    expect(within(viewMembers).getAllByLabelText("allowed")).toHaveLength(2);
+    expect(within(viewMembers).getAllByLabelText("not allowed")).toHaveLength(1);
+
     // Deleting members is admin-only.
     const deleteMembers = rowFor("Delete members");
     expect(within(deleteMembers).getAllByLabelText("allowed")).toHaveLength(1);
     expect(within(deleteMembers).getAllByLabelText("not allowed")).toHaveLength(2);
   });
 
-  it("flags the gating as UX-only, not a security boundary", () => {
+  it("notes the backend enforces the matrix (the frontend mirrors it)", () => {
     renderWithAuth(<HelpScreen />);
 
-    expect(screen.getByText(/not a security/i)).toBeInTheDocument();
+    expect(screen.getByText(/security boundary/i)).toBeInTheDocument();
+    expect(screen.getByText(/mirrors the same matrix/i)).toBeInTheDocument();
   });
 });
