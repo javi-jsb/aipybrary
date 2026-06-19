@@ -32,6 +32,9 @@ class FakeMemberRepository(MemberRepository):
     async def get_by_id(self, member_id: uuid.UUID) -> Member | None:
         return self._members.get(member_id)
 
+    async def get_by_user_id(self, user_id: uuid.UUID) -> Member | None:
+        return next((m for m in self._members.values() if m.user_id == user_id), None)
+
     async def get_by_id_with_email(self, member_id: uuid.UUID) -> tuple[Member, str] | None:
         member = self._members.get(member_id)
         if member is None:

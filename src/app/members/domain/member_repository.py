@@ -18,6 +18,9 @@ class MemberRepository(ABC):
     async def get_by_id(self, member_id: uuid.UUID) -> Member | None: ...
 
     @abstractmethod
+    async def get_by_user_id(self, user_id: uuid.UUID) -> Member | None: ...
+
+    @abstractmethod
     async def get_by_id_with_email(self, member_id: uuid.UUID) -> tuple[Member, str] | None: ...
 
     @abstractmethod

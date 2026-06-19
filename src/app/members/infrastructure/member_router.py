@@ -18,12 +18,18 @@ from app.members.domain.member_model import (
     SortBy,
 )
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository
+from app.users.infrastructure.authz import require_self_or_staff, staff_only
 from app.users.infrastructure.sql_user_repository import SqlModelUserRepository
 
 router = APIRouter(prefix="/members", tags=["members"])
 
 _DUPLICATE_EMAIL_DETAIL = "Email already registered"
 _HAS_LOANS_DETAIL = "Member has loans and cannot be deleted"
+
+# Listing and managing members is admin/staff only; reading a single member is
+# allowed to admin/staff or to the member themselves (ownership-scoped).
+_STAFF_ONLY = [Depends(staff_only)]
+_SELF_OR_STAFF = [Depends(require_self_or_staff)]
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> MemberService:
@@ -36,7 +42,7 @@ def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> Memb
 ServiceDep = Annotated[MemberService, Depends(_get_service)]
 
 
-@router.get("", response_model=MemberListResponse)
+@router.get("", response_model=MemberListResponse, dependencies=_STAFF_ONLY)
 async def list_members(
     service: ServiceDep,
     page: Annotated[int, Query(ge=1)] = 1,
@@ -50,7 +56,7 @@ async def list_members(
     return await service.get_filtered(full_name, email, status, sort_by, order, page, size)
 
 
-@router.get("/{member_id}", response_model=MemberPublic)
+@router.get("/{member_id}", response_model=MemberPublic, dependencies=_SELF_OR_STAFF)
 async def get_member(member_id: uuid.UUID, service: ServiceDep) -> MemberPublic:
     result = await service.get_by_id(member_id)
     if result is None:
@@ -59,7 +65,7 @@ async def get_member(member_id: uuid.UUID, service: ServiceDep) -> MemberPublic:
     return MemberPublic.from_member(member, email)
 
 
-@router.post("", response_model=MemberCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MemberCreateResponse, status_code=status.HTTP_201_CREATED, dependencies=_STAFF_ONLY)
 async def create_member(data: MemberCreate, service: ServiceDep) -> MemberCreateResponse:
     try:
         return await service.create(data)
@@ -67,7 +73,7 @@ async def create_member(data: MemberCreate, service: ServiceDep) -> MemberCreate
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUPLICATE_EMAIL_DETAIL) from None
 
 
-@router.patch("/{member_id}", response_model=MemberPublic)
+@router.patch("/{member_id}", response_model=MemberPublic, dependencies=_STAFF_ONLY)
 async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: ServiceDep) -> MemberPublic:
     result = await service.update(member_id, data)
     if result is None:
@@ -76,7 +82,7 @@ async def update_member(member_id: uuid.UUID, data: MemberUpdate, service: Servi
     return MemberPublic.from_member(member, email)
 
 
-@router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=_STAFF_ONLY)
 async def delete_member(member_id: uuid.UUID, service: ServiceDep) -> None:
     try:
         deleted = await service.delete(member_id)
