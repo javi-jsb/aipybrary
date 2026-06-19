@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { NavLink, Navigate, Outlet } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { useCurrentUser } from "../auth/useCurrentUser";
+import { canViewMembers } from "../auth/roles";
 import { LOGIN_ROUTE } from "../routes";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -39,9 +40,11 @@ export function ProtectedLayout() {
             <NavLink to="/books" className={navLinkClass}>
               Books
             </NavLink>
-            <NavLink to="/members" className={navLinkClass}>
-              Members
-            </NavLink>
+            {canViewMembers(currentUser.data?.role) && (
+              <NavLink to="/members" className={navLinkClass}>
+                Members
+              </NavLink>
+            )}
             <NavLink to="/loans" className={navLinkClass}>
               Loans
             </NavLink>

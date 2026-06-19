@@ -34,4 +34,32 @@ describe("App routing and auth gating", () => {
 
     expect(await screen.findByRole("heading", { name: "Books" })).toBeInTheDocument();
   });
+
+  it("shows the forbidden screen when a member deep-links to /members", async () => {
+    setToken("tok");
+    // The member's role resolves; the members route is guarded, so a direct hit
+    // lands on the "not allowed" screen instead of issuing the (403) list request.
+    fetchMock.mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes("/auth/me"))
+        return Promise.resolve(
+          jsonResponse({
+            id: "u1",
+            email: "member@example.com",
+            role: "member",
+            is_active: true,
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+          }),
+        );
+      return Promise.resolve(jsonResponse({}, 404));
+    });
+    renderWithAuth(<App />, { initialEntries: ["/members"] });
+
+    expect(await screen.findByText("Not allowed")).toBeInTheDocument();
+    const requestedMembersList = fetchMock.mock.calls.some(([url]) =>
+      String(url).match(/\/members(\?|$)/),
+    );
+    expect(requestedMembersList).toBe(false);
+  });
 });
