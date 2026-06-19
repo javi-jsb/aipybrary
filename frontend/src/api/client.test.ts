@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { apiClient, ApiError } from "./client";
+import { apiClient, ApiError, setUnauthorizedHandler } from "./client";
 import { setToken } from "../auth/tokenStore";
 import { jsonResponse } from "../test/utils";
 
@@ -68,5 +68,28 @@ describe("apiClient", () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
     await expect(apiClient("/books/1")).resolves.toBeUndefined();
+  });
+
+  it("invokes the registered unauthorized handler on a 401 (then still throws)", async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    fetchMock.mockResolvedValue(jsonResponse({ detail: "Not authenticated" }, 401));
+
+    const error = await apiClient("/auth/me").catch((e: unknown) => e);
+
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+    expect(error).toMatchObject({ status: 401 });
+    setUnauthorizedHandler(null);
+  });
+
+  it("does not invoke the unauthorized handler on a 403", async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    fetchMock.mockResolvedValue(jsonResponse({ detail: "Insufficient permissions" }, 403));
+
+    await apiClient("/members").catch(() => undefined);
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    setUnauthorizedHandler(null);
   });
 });

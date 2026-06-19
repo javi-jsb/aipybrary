@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { login as loginRequest } from "../api/auth";
+import { setUnauthorizedHandler } from "../api/client";
 import { AuthContext } from "./AuthContext";
 import { clearToken, getToken, setToken } from "./tokenStore";
 
@@ -18,6 +19,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearToken();
     setIsAuthenticated(false);
   }
+
+  // A `401` from any request means the session is gone (expired/invalid token):
+  // drop it so `ProtectedLayout` redirects to login. Distinct from `403`, which
+  // is handled per-view as a "not allowed" message.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      clearToken();
+      setIsAuthenticated(false);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   return <AuthContext value={{ isAuthenticated, login, logout }}>{children}</AuthContext>;
 }
