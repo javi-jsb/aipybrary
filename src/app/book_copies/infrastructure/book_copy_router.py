@@ -20,11 +20,15 @@ from app.book_copies.infrastructure.sql_book_copy_repository import SqlModelBook
 from app.books.infrastructure.sql_book_repository import SqlModelBookRepository
 from app.core.sorting import SortOrder
 from app.database import get_session
+from app.users.infrastructure.authz import staff_only
 
 router = APIRouter(prefix="/book-copies", tags=["book-copies"])
 
 _DUPLICATE_BARCODE_DETAIL = "Barcode already registered"
 _BOOK_NOT_FOUND_DETAIL = "book_id does not reference an existing book"
+
+# Reads stay open to any authenticated user; writes are admin/staff only.
+_STAFF_ONLY = [Depends(staff_only)]
 
 
 def _get_service(session: Annotated[AsyncSession, Depends(get_session)]) -> BookCopyService:
@@ -56,7 +60,7 @@ async def get_book_copy(copy_id: uuid.UUID, service: ServiceDep) -> BookCopyPubl
     return BookCopyPublic.model_validate(copy)
 
 
-@router.post("", response_model=BookCopyPublic, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=BookCopyPublic, status_code=status.HTTP_201_CREATED, dependencies=_STAFF_ONLY)
 async def create_book_copy(data: BookCopyCreate, service: ServiceDep) -> BookCopyPublic:
     try:
         copy = await service.create(data)
@@ -67,7 +71,7 @@ async def create_book_copy(data: BookCopyCreate, service: ServiceDep) -> BookCop
     return BookCopyPublic.model_validate(copy)
 
 
-@router.patch("/{copy_id}", response_model=BookCopyPublic)
+@router.patch("/{copy_id}", response_model=BookCopyPublic, dependencies=_STAFF_ONLY)
 async def update_book_copy(copy_id: uuid.UUID, data: BookCopyUpdate, service: ServiceDep) -> BookCopyPublic:
     try:
         copy = await service.update(copy_id, data)
@@ -78,7 +82,7 @@ async def update_book_copy(copy_id: uuid.UUID, data: BookCopyUpdate, service: Se
     return BookCopyPublic.model_validate(copy)
 
 
-@router.delete("/{copy_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{copy_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=_STAFF_ONLY)
 async def delete_book_copy(copy_id: uuid.UUID, service: ServiceDep) -> None:
     deleted = await service.delete(copy_id)
     if not deleted:
