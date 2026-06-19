@@ -27,7 +27,7 @@ from app.loans.domain.loan_model import (
 )
 from app.loans.infrastructure.sql_loan_repository import SqlModelLoanRepository
 from app.members.infrastructure.sql_member_repository import SqlModelMemberRepository
-from app.users.infrastructure.authz import FORBIDDEN, STAFF_ROLES, CurrentUser, MemberRepoDep, staff_only
+from app.users.infrastructure.authz import FORBIDDEN, STAFF_ROLES, CurrentUserDep, MemberRepoDep, staff_only
 
 router = APIRouter(prefix="/loans", tags=["loans"])
 
@@ -50,7 +50,7 @@ ServiceDep = Annotated[LoanService, Depends(_get_service)]
 @router.get("", response_model=LoanListResponse)
 async def list_loans(
     service: ServiceDep,
-    current_user: CurrentUser,
+    current_user: CurrentUserDep,
     member_repo: MemberRepoDep,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -74,7 +74,7 @@ async def list_loans(
 async def get_loan(
     loan_id: uuid.UUID,
     service: ServiceDep,
-    current_user: CurrentUser,
+    current_user: CurrentUserDep,
     member_repo: MemberRepoDep,
 ) -> LoanPublic:
     loan = await service.get_by_id(loan_id)

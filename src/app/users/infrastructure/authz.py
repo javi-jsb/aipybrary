@@ -23,7 +23,7 @@ from app.members.infrastructure.sql_member_repository import SqlModelMemberRepos
 from app.users.domain.user_model import User, UserRole
 from app.users.infrastructure.auth_router import get_current_user
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 #: Roles with full staff-facing access (manage catalog, members, and loans).
 STAFF_ROLES = (UserRole.admin, UserRole.staff)
@@ -39,7 +39,7 @@ def require_role(*roles: UserRole):
     yields `403`.
     """
 
-    async def _dependency(current_user: CurrentUser) -> User:
+    async def _dependency(current_user: CurrentUserDep) -> User:
         if current_user.role not in roles:
             raise FORBIDDEN
         return current_user
@@ -72,7 +72,7 @@ async def resolve_own_member(current_user: User, repo: SqlModelMemberRepository)
 
 async def require_self_or_staff(
     member_id: uuid.UUID,
-    current_user: CurrentUser,
+    current_user: CurrentUserDep,
     repo: MemberRepoDep,
 ) -> User:
     """Allow `admin`/`staff` unconditionally; allow a `member` only for their own id."""
