@@ -9,11 +9,11 @@ import { jsonResponse, renderWithAuth } from "../test/utils";
 const fetchMock = vi.fn<typeof fetch>();
 vi.stubGlobal("fetch", fetchMock);
 
-function meResponse() {
+function meResponse(role = "staff") {
   return jsonResponse({
     id: "user-1",
-    email: "staff@example.com",
-    role: "staff",
+    email: `${role}@example.com`,
+    role,
     is_active: true,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
@@ -59,6 +59,24 @@ describe("ProtectedLayout", () => {
     expect(screen.getByText("staff")).toBeInTheDocument();
   });
 
+  it("shows the Members nav entry for staff", async () => {
+    setToken("tok");
+    fetchMock.mockResolvedValue(meResponse("staff"));
+    renderLayout();
+
+    expect(await screen.findByRole("link", { name: "Members" })).toBeInTheDocument();
+  });
+
+  it("hides the Members nav entry for a member", async () => {
+    setToken("tok");
+    fetchMock.mockResolvedValue(meResponse("member"));
+    renderLayout();
+
+    // Wait for the role to resolve, then assert the entry is absent.
+    expect(await screen.findByText("member@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Members" })).not.toBeInTheDocument();
+  });
+
   it("clears the session and redirects to /login on sign out", async () => {
     setToken("tok");
     fetchMock.mockResolvedValue(meResponse());
@@ -69,5 +87,16 @@ describe("ProtectedLayout", () => {
 
     expect(getToken()).toBeNull();
     expect(screen.getByText("Login route")).toBeInTheDocument();
+  });
+
+  it("drops the session and redirects to /login when a request returns 401", async () => {
+    setToken("tok");
+    // An expired/invalid token: GET /auth/me comes back 401, so the app treats it
+    // as a session problem (distinct from a 403 "not allowed") and signs out.
+    fetchMock.mockResolvedValue(jsonResponse({ detail: "Not authenticated" }, 401));
+    renderLayout();
+
+    expect(await screen.findByText("Login route")).toBeInTheDocument();
+    expect(getToken()).toBeNull();
   });
 });

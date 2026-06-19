@@ -5,6 +5,7 @@ import {
   canManageCopies,
   canManageLoans,
   canManageMembers,
+  canViewMembers,
 } from "../auth/roles";
 
 /** The roles, in capability order (narrowest first), used as the matrix columns. */
@@ -45,7 +46,7 @@ const FEATURES: readonly { feature: string; capabilities: readonly Capability[] 
   {
     feature: "Members",
     capabilities: [
-      { label: "View members", allows: () => true },
+      { label: "View the members list", allows: canViewMembers },
       { label: "Create, edit members", allows: canManageMembers },
       { label: "Delete members", allows: canDeleteMembers },
     ],
@@ -71,11 +72,11 @@ const FEATURE_NOTES: readonly { title: string; body: string }[] = [
   },
   {
     title: "Members",
-    body: "Library members. Creating one provisions a linked member-role user and returns a one-time initial password (shown only once). A member cannot be deleted while they still have loans — the backend rejects it with a 409.",
+    body: "Library members. Creating one provisions a linked member-role user and returns a one-time initial password (shown only once). A member cannot be deleted while they still have loans — the backend rejects it with a 409. The members list is staff-only: a signed-in member has no members navigation and may only read their own record.",
   },
   {
     title: "Loans",
-    body: "Borrowing and returning. A loan links a member to a specific book copy; the due date is assigned by the server. Its status (active, overdue, returned) is computed from the due date and return time.",
+    body: "Borrowing and returning. A loan links a member to a specific book copy; the due date is assigned by the server. Its status (active, overdue, returned) is computed from the due date and return time. Members view loans read-only and see only their own; staff borrow and return on their behalf.",
   },
 ];
 
@@ -147,8 +148,10 @@ export function HelpScreen() {
           </table>
         </div>
         <p className="text-xs text-slate-500">
-          Role gating is <strong>UX-only</strong>: it hides controls a role may not use, but the
-          backend does not yet enforce role authorization, so it is not a security boundary.
+          The backend <strong>enforces</strong> these permissions server-side — it is the security
+          boundary. This interface mirrors the same matrix to hide controls, navigation, and pages a
+          role may not use; reaching a forbidden action directly still returns a "not allowed"
+          response.
         </p>
       </div>
     </section>

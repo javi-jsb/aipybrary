@@ -8,7 +8,7 @@ import { getBookCopy } from "../api/bookCopies";
 import { apiErrorToFormMessage } from "../api/errors";
 import type { Loan } from "../api/types";
 import { useCurrentUser } from "../auth/useCurrentUser";
-import { canManageLoans } from "../auth/roles";
+import { canManageLoans, canViewMembers } from "../auth/roles";
 import { LoanStatusBadge } from "./LoanStatusBadge";
 
 /** Format an ISO timestamp as a plain local date (the loans view only cares
@@ -99,18 +99,31 @@ function LoanRow({ loan, memberName, bookTitles, canManage }: LoanRowProps) {
  * see `roles.ts`).
  */
 export function LoansList() {
-  const loans = useQuery({ queryKey: ["loans"], queryFn: getLoans });
-  const members = useQuery({ queryKey: ["members"], queryFn: getMembers });
-  const books = useQuery({ queryKey: ["books"], queryFn: getBooks });
-
   const currentUser = useCurrentUser();
-  const canManage = canManageLoans(currentUser.data?.role);
+  const role = currentUser.data?.role;
+  const canManage = canManageLoans(role);
+  // A `member` is scoped server-side to their own loans (the API forces
+  // `member_id == self`) and may not list members — so skip the members fetch
+  // (it would `403`) and label each row with the caller's own email instead.
+  const canSeeMembers = canViewMembers(role);
+
+  const loans = useQuery({ queryKey: ["loans"], queryFn: getLoans });
+  const members = useQuery({
+    queryKey: ["members"],
+    queryFn: getMembers,
+    enabled: canSeeMembers,
+  });
+  const books = useQuery({ queryKey: ["books"], queryFn: getBooks });
 
   const memberNames = useMemo(() => {
     const map: Record<string, string> = {};
     for (const member of members.data?.items ?? []) map[member.id] = member.full_name;
     return map;
   }, [members.data]);
+
+  // For a member, every listed loan is their own, so their email reads better
+  // than the bare member id when no members listing is available to resolve names.
+  const selfLabel = canSeeMembers ? undefined : currentUser.data?.email;
 
   const bookTitles = useMemo(() => {
     const map: Record<string, string> = {};
@@ -149,7 +162,7 @@ export function LoansList() {
               <LoanRow
                 key={loan.id}
                 loan={loan}
-                memberName={memberNames[loan.member_id]}
+                memberName={memberNames[loan.member_id] ?? selfLabel}
                 bookTitles={bookTitles}
                 canManage={canManage}
               />

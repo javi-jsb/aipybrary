@@ -19,6 +19,21 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
+type UnauthorizedHandler = () => void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+/**
+ * Register a callback invoked whenever a request comes back `401 Unauthorized`
+ * (a missing/invalid/expired token — a session problem). `AuthProvider` wires
+ * this to `logout` so an expired token drops the session and redirects to login,
+ * keeping that path distinct from the `403`/"not allowed" handling. The error is
+ * still thrown afterwards, so call sites can surface their own message.
+ */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler;
+}
+
 /**
  * Single seam for all backend requests: prepends the configured base URL,
  * attaches the stored access token as a bearer header when present, parses
@@ -38,6 +53,11 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}): 
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // A session problem (expired/invalid token) — let the app drop the
+      // session and redirect to login, distinct from a 403 "not allowed".
+      unauthorizedHandler?.();
+    }
     throw new ApiError(response.status, await extractErrorMessage(response));
   }
 
