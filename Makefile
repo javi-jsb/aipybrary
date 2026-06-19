@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-setup e2e-frontend check format db-up db-down db-down-clean
+.PHONY: help dev dev-frontend db-migrate db-seed test coverage test-frontend coverage-frontend e2e-setup e2e-frontend test-all check format db-up db-down db-down-clean
 
 ##@ Dev
 dev: ## Run the FastAPI dev server
@@ -43,6 +43,14 @@ e2e-setup: ## One-time E2E setup: install frontend deps + the Chromium browser
 
 e2e-frontend: ## Run the end-to-end test suite (Playwright) from /frontend
 	pnpm --dir frontend test:e2e
+
+test-all: ## Run every suite in sequence: backend, frontend unit, E2E (needs db-up + e2e-setup)
+	@echo "\n==> Backend (pytest)"
+	@$(MAKE) test
+	@echo "\n==> Frontend unit (Vitest)"
+	@$(MAKE) test-frontend
+	@echo "\n==> End-to-end (Playwright)"
+	@$(MAKE) e2e-frontend
 
 ##@ Code quality
 check: ## Lint and verify formatting (no changes)
